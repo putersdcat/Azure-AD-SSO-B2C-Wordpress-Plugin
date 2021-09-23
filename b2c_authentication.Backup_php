@@ -144,25 +144,6 @@ function b2c_verify_token()
 
 				$first_name = $token_checker->get_claim('given_name');
 				$last_name = $token_checker->get_claim('family_name');
-				$display_name = $token_checker->get_claim('displayName'); // <-- Need to debug this one, not sure, just guessed...
-				$billing_first_name = $token_checker->get_claim('given_name');
-				$billing_last_name = $token_checker->get_claim('family_name');
-				$billing_address_1 = $token_checker->get_claim('streetAddress');
-				$billing_postcode = $token_checker->get_claim('postalCode');
-				$billing_city = $token_checker->get_claim('city');
-				$billing_state = $token_checker->get_claim('state');
-				$billing_country = $token_checker->get_claim('country');
-				$billing_phone = $token_checker->get_claim('extension_wc_billing_phone');
-				$billing_email = $token_checker->get_claim('emails.0');
-				$shipping_first_name = $token_checker->get_claim('extension_wc_shipping_first_name');
-				$shipping_last_name = $token_checker->get_claim('extension_wc_shipping_last_name');
-				$shipping_address_1 = $token_checker->get_claim('extension_wc_shipping_address');
-				$shipping_postcode = $token_checker->get_claim('extension_wc_shipping_postcode');
-				$shipping_city = $token_checker->get_claim('extension_wc_shipping_city');
-				$shipping_state = $token_checker->get_claim('extension_wc_shipping_state');
-				$shipping_country = $token_checker->get_claim('extension_wc_shipping_country');
-				$shipping_phone = $token_checker->get_claim('extension_wc_shipping_phone');
-				$locale = $token_checker->get_claim('extension_app_locale');
 
 				$our_userdata = array(
 					'ID' => 0,
@@ -171,107 +152,25 @@ function b2c_verify_token()
 					'user_registered' => date('Y-m-d H:i:s'),
 					'user_status' => 0,
 					'user_email' => $email,
-					//'display_name' => $first_name . ' ' . $last_name,
-					'display_name' => $display_name,
+					'display_name' => $first_name . ' ' . $last_name,
 					'first_name' => $first_name,
-					'last_name' => $last_name,
-					//'role' => customer, it looks like in the WC code when this is null it will default to customer, lets see.
-					'billing_first_name' => $billing_first_name,
-					'billing_last_name' => $billing_last_name,
-					'billing_address_1' => $billing_address_1,
-					'billing_postcode' => $billing_postcode,
-					'billing_city' => $billing_city,
-					'billing_state' => $billing_state,
-					'billing_country' => $billing_country,
-					'billing_phone' => $billing_phone,
-					'billing_email' => $billing_email,
-					'shipping_first_name' => $shipping_first_name,
-					'shipping_last_name' => $shipping_last_name,
-					'shipping_address_1' => $shipping_address_1,
-					'shipping_postcode' => $shipping_postcode,
-					'shipping_city' => $shipping_city,
-					'shipping_state' => $shipping_state,
-					'shipping_country' => $shipping_country,
-					'shipping_phone' => $shipping_phone
-					//'locale' => $locale
+					'last_name' => $last_name
 				);
-
-				// EWA: Dev Notes
-				/*
-
-				woocommerce_checkout_after_customer_details <-- Edit profile in B2C
-
-woocommerce_checkout_before_customer_details
-woocommerce_checkout_process
-woocommerce_checkout_update_order_meta
-woocommerce_checkout_order_processed
-
-woocommerce_registration_redirect <-- SingIn/SignUp profile in B2C
-woocommerce_login_redirect <-- SingIn/SignUp profile in B2C
-woocommerce_after_customer_login_form
-
-
-woocommerce-edit_address
-woocommerce_after_edit_address_form_{$load_address}
-woocommerce_after_edit_account_address_form
-
-
-				See wc-user-functions.php in DevRef
-				https://github.com/luizbills/woo-force-authentification-before-checkout
-
-				*/
 
 				$userID = wp_insert_user($our_userdata);
 				update_user_meta($userID, 'b2c_object_id', sanitize_text_field($object_id));
 				do_action('b2c_new_userdata', $userID, $token_checker->get_payload());
 			} else if ($policy == B2C_Settings::$edit_profile_policy) { // Update the existing user w/ new attritubtes
 
-				// $name = $token_checker->get_claim('name'); // Is this a mistake, not referenced in the code anywhere?
+				$name = $token_checker->get_claim('name');
 				$first_name = $token_checker->get_claim('given_name');
 				$last_name = $token_checker->get_claim('family_name');
-				$display_name = $token_checker->get_claim('displayName'); // <-- Need to debug this one, not sure, just guessed...
-				$billing_first_name = $token_checker->get_claim('given_name');
-				$billing_last_name = $token_checker->get_claim('family_name');
-				$billing_address_1 = $token_checker->get_claim('streetAddress');
-				$billing_postcode = $token_checker->get_claim('postalCode');
-				$billing_city = $token_checker->get_claim('city');
-				$billing_state = $token_checker->get_claim('state');
-				$billing_country = $token_checker->get_claim('country');
-				$billing_phone = $token_checker->get_claim('extension_wc_billing_phone');
-				$billing_email = $token_checker->get_claim('emails.0');
-				$shipping_first_name = $token_checker->get_claim('extension_wc_shipping_first_name');
-				$shipping_last_name = $token_checker->get_claim('extension_wc_shipping_last_name');
-				$shipping_address_1 = $token_checker->get_claim('extension_wc_shipping_address');
-				$shipping_postcode = $token_checker->get_claim('extension_wc_shipping_postcode');
-				$shipping_city = $token_checker->get_claim('extension_wc_shipping_city');
-				$shipping_state = $token_checker->get_claim('extension_wc_shipping_state');
-				$shipping_country = $token_checker->get_claim('extension_wc_shipping_country');
-				$shipping_phone = $token_checker->get_claim('extension_wc_shipping_phone');
-				$locale = $token_checker->get_claim('extension_app_locale');
 
 				$our_userdata = array(
 					'ID' => $user->ID,
 					'display_name' => $first_name . ' ' . $last_name,
 					'first_name' => $first_name,
-					'last_name' => $last_name,
-					'billing_first_name' => $billing_first_name,
-					'billing_last_name' => $billing_last_name,
-					'billing_address_1' => $billing_address_1,
-					'billing_postcode' => $billing_postcode,
-					'billing_city' => $billing_city,
-					'billing_state' => $billing_state,
-					'billing_country' => $billing_country,
-					'billing_phone' => $billing_phone,
-					'billing_email' => $billing_email,
-					'shipping_first_name' => $shipping_first_name,
-					'shipping_last_name' => $shipping_last_name,
-					'shipping_address_1' => $shipping_address_1,
-					'shipping_postcode' => $shipping_postcode,
-					'shipping_city' => $shipping_city,
-					'shipping_state' => $shipping_state,
-					'shipping_country' => $shipping_country,
-					'shipping_phone' => $shipping_phone
-					//'locale' => $locale
+					'last_name' => $last_name
 				);
 
 				$userID = wp_update_user($our_userdata);
@@ -381,28 +280,3 @@ add_action('wp_loaded', 'b2c_verify_token');
  * they are redirected to B2C's logout endpoint.
  */
 add_action('wp_logout', 'b2c_logout');
-
-//
-// Start of new code hooks for WooCommerce integration 
-//
-
-/** 
- * Hooks onto the WC login action, so when user logs in on WordPress, user is redirected
- * to B2C's authorization endpoint. 
- */
-add_action('woocommerce_login_redirect', 'b2c_login');
-
-/** 
- * Hooks onto the WC password reset action, so user is redirected
- * to B2C's password reset endpoint. 
- * 
- * example.com/wp-login.php?action=lostpassword
- */
-add_action('woocommerce_customer_reset_password', 'b2c_password_reset');
-
-/**
- * Hooks onto the WC page load action, so when user edits at,
- * WooCommerce My Account Page – User Logged In – Edit Address
- * they are redirected to B2C's edit profile endpoint.
- */
-add_action('woocommerce_after_edit_account_address_form', 'b2c_edit_profile');
