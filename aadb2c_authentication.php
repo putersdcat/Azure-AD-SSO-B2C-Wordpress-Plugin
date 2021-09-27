@@ -28,10 +28,19 @@ define('AADB2C_RESPONSE_MODE', 'id_token');
 // Adds the B2C Options page to the Admin dashboard, under 'Settings'.
 if (is_admin()) $aadb2c_settings_page = new AADB2C_Settings_Page();
 $aadb2c_settings = new AADB2C_Settings();
-//$settings = $aadb2c_settings;
 
 //*****************************************************************************************
 
+class AADB2C {
+
+	//static $instance = FALSE;
+
+	private $settings = null;
+	
+	public function __construct( $settings) {
+		$this->settings = $settings;
+	}
+}
 
 /**
  * Redirects to B2C on a user login request.
@@ -196,8 +205,8 @@ function aadb2c_verify_token()
 					'shipping_city' => $shipping_city,
 					'shipping_state' => $shipping_state,
 					'shipping_country' => $shipping_country,
-					'shipping_phone' => $shipping_phone
-					//'locale' => $locale
+					'shipping_phone' => $shipping_phone,
+					//'locale' => $locale,
 				);
 
 				// EWA: Dev Notes
@@ -272,8 +281,8 @@ function aadb2c_verify_token()
 					'shipping_city' => $shipping_city,
 					'shipping_state' => $shipping_state,
 					'shipping_country' => $shipping_country,
-					'shipping_phone' => $shipping_phone
-					//'locale' => $locale
+					'shipping_phone' => $shipping_phone,
+					//'locale' => $locale,
 				);
 
 				update_option("aadb2c_wc_claims", $our_userdata);
@@ -290,8 +299,8 @@ function aadb2c_verify_token()
 				do_action('aadb2c_update_userdata', $userID, $token_checker->get_payload());
 			} else {
 				// else user exists and we did not call from edit whatever...
-				// aadb2c_claims_to_wc(); // disabled for debugging of failed sign-in w/ exisitng wc / b2b user.
 				$userID = $user->ID;
+				aadb2c_claims_to_wc($token_checker); // disabled for debugging of failed sign-in w/ exisitng wc / b2b user.
 			}
 
 			// Check if the user is an admin and needs MFA
@@ -369,13 +378,13 @@ function aadb2c_password_reset()
  * gets claim calues form OAuth B2C token and returns them in an option 
  */
 // This does now work broken out like this, because its missing the $_POST i think...
-function aadb2c_claims_to_wc()
+function aadb2c_claims_to_wc($token_checker)
 {
 	try {
 		// define things we need for token checker
-		$policy = AADB2C_Settings::$generic_policy;
+		//$policy = AADB2C_Settings::$generic_policy;
 		// define token checker
-		$token_checker = new AADB2C_Token_Checker($_POST[AADB2C_RESPONSE_MODE], AADB2C_Settings::$clientID, $policy);
+		//$token_checker = new AADB2C_Token_Checker($_POST[AADB2C_RESPONSE_MODE], AADB2C_Settings::$clientID, $policy);
 
         $name = $token_checker->get_claim('name'); // Is this a mistake, not referenced in the code anywhere?
         $first_name = $token_checker->get_claim('given_name');
@@ -420,8 +429,8 @@ function aadb2c_claims_to_wc()
             'shipping_city' => $shipping_city,
             'shipping_state' => $shipping_state,
             'shipping_country' => $shipping_country,
-            'shipping_phone' => $shipping_phone
-            //'locale' => $locale
+            'shipping_phone' => $shipping_phone,
+            //'locale' => $locale,
         );
 		
         update_option("aadb2c_wc_claims", $our_userdata);
@@ -444,20 +453,27 @@ add_filter( 'authenticate', 'aadb2c_authenticate', 1, 3 );
 
 function aadb2c_authenticate( $user, $username, $password ) {
 
+	global $GraphToken;
+	$GraphToken = array();
+
 	// Don't re-authenticate if already authenticated
 	if ( is_a( $user, 'WP_User' ) ) { return $user; }
 
-	$settings = new AADB2C_Settings();
-	$graph_helper = new AADB2C_GraphHelper();
+	// If we're mapping Azure AD groups to WordPress roles, make the Graph API call here
+	AADB2C_Graph_Helper::$settings  = $this->settings;
 
 	/* If 'code' is present, this is the Authorization Response from Azure AD, and 'code' has
 	 * the Authorization Code, which will be exchanged for an ID Token and an Access Token.
 	 */
 	if ( isset( $_GET['code'] ) ) {
 		// Looks like we got a valid authorization code, let's try to get an access token with it
-		static $token = $graph_helper->get_access_token( $_GET['code'], $settings );
+		//$token = $graph_helper->get_access_token( $_GET['code'], $settings );
+		$token = AADB2C_Authorization_Helper::get_access_token( $_GET['code'], $this->settings );
+		$GraphToken = array(
+			'aadb2c_token_type' => $token->token_type,
+			'aadb2c_access_token' => $token->access_token,
+		);
 	}
-
 }	
 
 
@@ -476,12 +492,9 @@ function aadb2c_patch_wc_meta_to_b2c()
 	// Get current user id
 	$user_id = get_current_user_id();
 
+	global $GraphToken;
 
-	// Looks like we got a valid authorization code, let's try to get an access token with it
-	//$token = AADB2C_AuthorizationHelper::get_access_token( $token_checker->get_claim('code'), $settings ); // graph token
-	//$settings = new AADB2C_Settings();
-
-	$graph_helper = new AADB2C_GraphHelper();
+	$graph_helper = new AADB2C_Graph_Helper();
 	//$graph_helper = new AADB2C_GraphHelper($_GET['code'], $settings);
 
 	// Get the data from the last claim pull
@@ -506,69 +519,72 @@ function aadb2c_patch_wc_meta_to_b2c()
 	// print_r(array_filter($linksArray, function($value) { return !is_null($value) && $value !== ''; }));
 	// PHP < 5.3
 	//print_r(array_filter($linksArray, create_function('$value', 'return $value !== "";')));
+	
+	$graph_helper->set_user_attribute( $GraphToken, $user_id, 'given_name', 'Bob' );
+	$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_last_name', 'Balogna' );
 
 	// This should be optimized to just make one api call with array, but for now it is like it is :-(
     if ( $local_userdata->first_name != $remote_userdata->first_name )
-		$graph_helper->set_user_attribute( $user_id, 'given_name', $local_userdata->first_name );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'given_name', $local_userdata->first_name );
 
 	if ( $local_userdata->last_name != $remote_userdata->last_name )
-		$graph_helper->set_user_attribute( $user_id, 'family_name', $local_userdata->last_name );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'family_name', $local_userdata->last_name );
 
 	if ( $local_userdata->display_name != $remote_userdata->display_name )
-		$graph_helper->set_user_attribute( $user_id, 'name', $local_userdata->display_name );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'name', $local_userdata->display_name );
 	
 	if ( $local_userdata->billing_first_name != $remote_userdata->billing_first_name )
-		$graph_helper->set_user_attribute( $user_id, 'given_name', $local_userdata->billing_first_name );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'given_name', $local_userdata->billing_first_name );
 
 	if ( $local_userdata->billing_last_name != $remote_userdata->billing_last_name )
-		$graph_helper->set_user_attribute( $user_id, 'family_name', $local_userdata->billing_last_name );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'family_name', $local_userdata->billing_last_name );
 
 	if ( $local_userdata->billing_address_1 != $remote_userdata->billing_address_1 )
-		$graph_helper->set_user_attribute( $user_id, 'streetAddress', $local_userdata->billing_address_1 );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'streetAddress', $local_userdata->billing_address_1 );
 
 	if ( $local_userdata->billing_postcode != $remote_userdata->billing_postcode )
-		$graph_helper->set_user_attribute( $user_id, 'postalCode', $local_userdata->billing_postcode );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'postalCode', $local_userdata->billing_postcode );
 
 	if ( $local_userdata->billing_city != $remote_userdata->billing_city )		
-		$graph_helper->set_user_attribute( $user_id, 'city', $local_userdata->billing_city );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'city', $local_userdata->billing_city );
 
 	if ( $local_userdata->billing_state != $remote_userdata->billing_state )
-		$graph_helper->set_user_attribute( $user_id, 'state', $local_userdata->billing_state );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'state', $local_userdata->billing_state );
 	
 	if ( $local_userdata->billing_country != $remote_userdata->billing_country )
-		$graph_helper->set_user_attribute( $user_id, 'country', $local_userdata->billing_country );
+		$graph_helper->set_user_attribute( $GraphToken, $user_id, 'country', $local_userdata->billing_country );
 
 	//if ( $local_userdata->billing_email != $remote_userdata->billing_email )
-	//	$graph_helper->set_user_attribute( $user_id, 'emails.0', $local_userdata->billing_email );
+	//	$graph_helper->set_user_attribute( $GraphToken, $user_id, 'emails.0', $local_userdata->billing_email );
 	
 	// set Custom attributes
 	if ( $local_userdata->billing_phone != $remote_userdata->billing_phone )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_billing_phone', $local_usermeta->billing_phone );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_billing_phone', $local_usermeta->billing_phone );
 
 	if ( $local_userdata->shipping_first_name != $remote_userdata->shipping_first_name )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_first_name', $local_usermeta->shipping_first_name );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_first_name', $local_usermeta->shipping_first_name );
 	
 	if ( $local_userdata->shipping_last_name != $remote_userdata->shipping_last_name )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_last_name', $local_usermeta->shipping_last_name );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_last_name', $local_usermeta->shipping_last_name );
 	
 	if ( $local_userdata->shipping_address_1 != $remote_userdata->shipping_address_1 )
-		$shipping_address_1 = $graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_address', $local_usermeta->shipping_address_1 );
+		$shipping_address_1 = $graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_address', $local_usermeta->shipping_address_1 );
 
 	if ( $local_userdata->shipping_postcode != $remote_userdata->shipping_postcode )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_postcode', $local_usermeta->shipping_postcode );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_postcode', $local_usermeta->shipping_postcode );
 
 	if ( $local_userdata->shipping_city != $remote_userdata->shipping_city )	
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_city', $local_usermeta->shipping_city );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_city', $local_usermeta->shipping_city );
 
 	if ( $local_userdata->shipping_state != $remote_userdata->shipping_state )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_state', $local_usermeta->shipping_state );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_state', $local_usermeta->shipping_state );
 
 	if ( $local_userdata->shipping_country != $remote_userdata->shipping_country )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_country', $local_usermeta->shipping_country );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_country', $local_usermeta->shipping_country );
 
 	if ( $local_userdata->shipping_phone != $remote_userdata->shipping_phone )
-		$graph_helper->set_user_custom_extension( $user_id, 'wc_shipping_phone', $local_usermeta->shipping_phone );
-	//$locale = $graph_helper->set_user_custom_extension( $user_id, 'app_locale', );
+		$graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'wc_shipping_phone', $local_usermeta->shipping_phone );
+	//$locale = $graph_helper->set_user_custom_extension( $GraphToken, $user_id, 'app_locale', );
 
 	// If we're mapping Azure AD groups to WordPress roles, make the Graph API call here
 	//AADB2C_GraphHelper::$settings  = $this->settings;
