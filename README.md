@@ -1,4 +1,11 @@
-## Azure-B2C-Wordpress-Plugin
+## Azure-AD-SSO-B2C-Wordpress-Plugin
+This Fork is a dissaster, run away now!
+
+Attempt at smashing https://github.com/psignoret/aad-sso-wordpress into https://github.com/w00dbury/Azure-B2C-Wordpress-Plugin
+
+for the purpose of using ClientID and ClientSecret against b2c_extension_app to make patch calls and set user accont properties.
+
+
 This repo contains the code for a WordPress plugin that allows users to authenticate with Azure AD B2C using OpenID Connect. Admins have the ability to configure several B2C policies: general sign-in/sign-up without multifactor authetication, admin sign-in/sign-up with multifactor authentication (optional), and profile editing.
 
 This is based on the [plugin](https://github.com/AzureAD/active-directory-b2c-wordpress-plugin-openidconnect) from Microsoft. That project seems to have gone stale so several improvements have been merged into this repository.
