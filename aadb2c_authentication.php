@@ -300,7 +300,7 @@ function aadb2c_verify_token()
 			} else {
 				// else user exists and we did not call from edit whatever...
 				$userID = $user->ID;
-				aadb2c_claims_to_wc($token_checker); // disabled for debugging of failed sign-in w/ exisitng wc / b2b user.
+				//aadb2c_claims_to_wc($token_checker); // disabled for debugging of failed sign-in w/ exisitng wc / b2b user.
 			}
 
 			// Check if the user is an admin and needs MFA
@@ -459,8 +459,6 @@ function aadb2c_authenticate( $user, $username, $password ) {
 	// Don't re-authenticate if already authenticated
 	if ( is_a( $user, 'WP_User' ) ) { return $user; }
 
-	// If we're mapping Azure AD groups to WordPress roles, make the Graph API call here
-	AADB2C_Graph_Helper::$settings  = $this->settings;
 
 	/* If 'code' is present, this is the Authorization Response from Azure AD, and 'code' has
 	 * the Authorization Code, which will be exchanged for an ID Token and an Access Token.
@@ -493,6 +491,11 @@ function aadb2c_patch_wc_meta_to_b2c()
 	$user_id = get_current_user_id();
 
 	global $GraphToken;
+
+	$settings = new AADB2C_Graph_Helper();
+
+	// make the Graph API call here
+	AADB2C_Graph_Helper::$settings  = $settings;
 
 	$graph_helper = new AADB2C_Graph_Helper();
 	//$graph_helper = new AADB2C_GraphHelper($_GET['code'], $settings);

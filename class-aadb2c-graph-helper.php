@@ -8,7 +8,7 @@ class AADB2C_Graph_Helper
 	/**
 	 * @var \AADB2C_Settings The instance of AADB2C_Settings to use.
 	 */
-	//public static $settings;
+	public static $settings;
 
 	/**
 	 * Gets the the Microsoft Graph API base URL to use.
@@ -155,7 +155,6 @@ class AADB2C_Graph_Helper
 
 		$auth_headers = array(
 			'Authorization' => $GraphToken['aadb2c_token_type'] . ' ' . $GraphToken['aadb2c_access_token'],
-			//'Authorization' => $graphSession->token_type . ' ' . $graphSession->access_token,
 			'Accept'        => 'application/json',
 			'Content-Type'  => 'application/json',
 			'Prefer'        => 'return-content',
