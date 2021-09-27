@@ -7,8 +7,9 @@
  */
 function autoload($class)
 {
-	// only try to autoload AD B2C classes or their vendor dependencies
-	if (0 !== strpos($class, 'B2C')) {
+	// only try to autoload AD the new* AADB2C classes or their vendor dependencies
+	// After Fork EWA
+	if (0 !== strpos($class, 'AADB2C')) {
 		return;
 	}
 
@@ -21,7 +22,7 @@ function autoload($class)
 	}
 
 
-	require_once 'b2c-user-settings.php';
+	require_once 'aadb2c-user-settings.php';
 }
 
 /**

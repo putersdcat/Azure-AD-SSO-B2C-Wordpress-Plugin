@@ -7,7 +7,7 @@ use \phpseclib\Crypt\RSA;
  * A class to verify an id_token, following the implicit flow
  * defined by the OpenID Connect standard.
  */
-class B2C_Token_Checker
+class AADB2C_Token_Checker
 {
 
 	private $id_token_array = array(); // still encoded
@@ -20,7 +20,7 @@ class B2C_Token_Checker
 	{
 
 		$this->clientID = $clientID;
-		$this->endpoint_handler = new B2C_Endpoint_Handler($policy_name);
+		$this->endpoint_handler = new AADB2C_Endpoint_Handler($policy_name);
 		$this->split_id_token($id_token);
 	}
 
