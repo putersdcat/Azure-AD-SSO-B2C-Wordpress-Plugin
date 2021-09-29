@@ -148,9 +148,42 @@ class AADB2C_Settings_Page
         );
 
         add_settings_field(
+            // Parent AzAd Tenant ID where b2c AzAd resource exists 
+            'aadb2c_tenant_id_parent_azad', // ID
+            'Parent AzAd (Tenant ID) where b2c AzAd resource exists', // Title 
+            array($this, 'aadb2c_tenant_id_parent_azad_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
             'aadb2c_verify_tokens', // ID
             'Verify ID Tokens', // Title 
             array($this, 'aadb2c_verify_tokens_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
+            'aadb2c_Replace_WpLogin', // ID
+            'Replace WordPress Login', // Title 
+            array($this, 'aadb2c_Replace_WpLogin_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
+            'aadb2c_RequireLoginToAccess_WC_Cart', // ID
+            'Require User to Login to Access the WooCommerce Cart', // Title 
+            array($this, 'aadb2c_RequireLoginToAccess_WC_Cart_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
+            'aadb2c_EnableGraphArrtibuteSync', // ID
+            'Enable the Use of Legacy Graph Calls to Sync B2C user attributes', // Title 
+            array($this, 'aadb2c_EnableGraphArrtibuteSync_callback'), // Callback
             'aadb2c-settings-page', // Page
             'service_config_section' // Section           
         );
@@ -191,8 +224,17 @@ class AADB2C_Settings_Page
         
         if (isset($input['aadb2c_extensions_app_client_id']))
         $new_input['aadb2c_extensions_app_client_id'] = sanitize_text_field($input['aadb2c_extensions_app_client_id']);
-    
+        
+        if (isset($input['aadb2c_tenant_id_parent_azad']))
+        $new_input['aadb2c_tenant_id_parent_azad'] = sanitize_text_field($input['aadb2c_tenant_id_parent_azad']);
+
         $new_input['aadb2c_verify_tokens'] = $input['aadb2c_verify_tokens'];
+
+        $new_input['aadb2c_Replace_WpLogin'] = $input['aadb2c_Replace_WpLogin'];
+
+        $new_input['aadb2c_RequireLoginToAccess_WC_Cart'] = $input['aadb2c_RequireLoginToAccess_WC_Cart'];
+
+        $new_input['aadb2c_EnableGraphArrtibuteSync'] = $input['aadb2c_EnableGraphArrtibuteSync'];
 
         return $new_input;
     }
@@ -307,11 +349,22 @@ class AADB2C_Settings_Page
     {
         printf(
             '<input type="text" id="aadb2c_extensions_app_client_id_callback" name="aadb2c_config_elements[aadb2c_extensions_app_client_id]" value="%s" />'
-                . '<br/><i>The ApplicationId (ClientId) of the default b2c-extensions-app in B2C AzAd.</i>',
+                . '<br/><i>The Parent AzAd (Tenant ID) where b2c AzAd resource exists.</i>',
             isset($this->options['aadb2c_extensions_app_client_id']) ? esc_attr($this->options['aadb2c_extensions_app_client_id']) : ''
         );
     }
-    
+
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_tenant_id_parent_azad_callback()
+    {
+        printf(
+            '<input type="text" id="aadb2c_tenant_id_parent_azad_callback" name="aadb2c_config_elements[aadb2c_tenant_id_parent_azad]" value="%s" />'
+                . '<br/><i>The ApplicationId (ClientId) of the default b2c-extensions-app in B2C AzAd.</i>',
+            isset($this->options['aadb2c_tenant_id_parent_azad']) ? esc_attr($this->options['aadb2c_tenant_id_parent_azad']) : ''
+        );
+    }
     /** 
      * Get the settings option array and print one of its values
      */
@@ -325,4 +378,50 @@ class AADB2C_Settings_Page
 
         echo '<input type="checkbox" id="aadb2c_verify_tokens" name="aadb2c_config_elements[aadb2c_verify_tokens]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
     }
+
+
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_Replace_WpLogin_callback()
+    {
+
+        if (empty($this->options['aadb2c_Replace_WpLogin']))
+            $this->options['aadb2c_Replace_WpLogin'] = 0;
+
+        $current_value = $this->options['aadb2c_Replace_WpLogin'];
+
+        echo '<input type="checkbox" id="aadb2c_Replace_WpLogin" name="aadb2c_config_elements[aadb2c_Replace_WpLogin]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_RequireLoginToAccess_WC_Cart_callback()
+    {
+
+        if (empty($this->options['aadb2c_RequireLoginToAccess_WC_Cart']))
+            $this->options['aadb2c_RequireLoginToAccess_WC_Cart'] = 0;
+
+        $current_value = $this->options['aadb2c_RequireLoginToAccess_WC_Cart'];
+
+        echo '<input type="checkbox" id="aadb2c_RequireLoginToAccess_WC_Cart" name="aadb2c_config_elements[aadb2c_RequireLoginToAccess_WC_Cart]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+
+
+
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_EnableGraphArrtibuteSync_callback()
+    {
+
+        if (empty($this->options['aadb2c_EnableGraphArrtibuteSync']))
+            $this->options['aadb2c_EnableGraphArrtibuteSync'] = 0;
+
+        $current_value = $this->options['aadb2c_EnableGraphArrtibuteSync'];
+
+        echo '<input type="checkbox" id="aadb2c_EnableGraphArrtibuteSync" name="aadb2c_config_elements[aadb2c_EnableGraphArrtibuteSync]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+
 }
