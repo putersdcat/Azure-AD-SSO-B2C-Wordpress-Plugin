@@ -625,8 +625,8 @@ function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
 	// $new = array( 'link1' => 'Link 1', 'link2' => 'Link 2' );
  
 	//Kontodetails bearbeiten
-	//$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen', 'konto-details-bearbeiten' => 'Kontodetails' );
-	$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen' );
+	$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen', 'konto-details-bearbeiten' => 'Kontodetails' );
+	//$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen' );
 
 	// array_slice() is good when you want to add an element between the other ones
 	$menu_links = array_slice( $menu_links, 0, 1, true ) 
@@ -680,6 +680,12 @@ function aadb2c_check_if_logged_in()
 {
 	$pageid = get_option( 'woocommerce_checkout_page_id' );
 	if(!is_user_logged_in() && is_page($pageid))
+	{
+		aadb2c_login();
+		exit;
+	}
+	
+	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
 		aadb2c_login();
 		exit;
