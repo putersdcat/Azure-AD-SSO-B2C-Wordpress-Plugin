@@ -692,15 +692,18 @@ function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
 
 // point the endpoint to a custom URL
 function aadb2c_custom_wc_my_account_endpoints( $url, $endpoint ){
-	$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
+	
 	if( $endpoint == 'kennwort-reset' ) {
+		$custom_redirect_uri = 'https://preorder.kekz.com/mein-konto/';
 		// Return URL for password_reset endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
 		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset'; // Your custom URL to add to the My Account menu
 		return $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . '&state=password_reset'; // Your custom URL to add to the My Account menu	
 	}
 
+	// This one is not in use, and should not be used in normal operation.
 	if( $endpoint == 'konto-details-bearbeiten' ) {
+		$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
 		// Return URL for edit_profile endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$edit_profile_policy);
 		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=edit_profile'; // Your custom URL to add to the My Account menu
