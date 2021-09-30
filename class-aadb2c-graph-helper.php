@@ -47,7 +47,6 @@ class AADB2C_Graph_Helper
 		$updatedArray = array(); 
 		foreach ($input as $key => $value) {
 			
-			
 			if (substr( $key, 0, strlen($searchKey) ) === $searchKey )
 				$key = str_replace($searchKey, $replaceKey, $key);
 	
@@ -56,6 +55,7 @@ class AADB2C_Graph_Helper
 	
 			$updatedArray[$key] = $value;
 		}
+		
 		return $updatedArray; 
 	}
 

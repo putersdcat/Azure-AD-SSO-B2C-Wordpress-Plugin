@@ -59,6 +59,18 @@ function aadb2c_login()
 	exit;
 }
 
+function aadb2c_login_custom($custom_redirect_uri)
+{
+	try {
+		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$generic_policy);
+		$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . "&state=generic";
+		wp_redirect($authorization_endpoint);
+	} catch (Exception $e) {
+		echo $e->getMessage();
+	}
+	exit;
+}
+
 /** 
  * Redirects to B2C on user logout.
  */
@@ -476,7 +488,7 @@ function aadb2c_patch_wc_meta_to_b2c()
 	//	$UpdateAttribs['emails.0'] = $local_userdata->billing_email;
 	
 	if(!empty($UpdateAttribs)) {
-		error_log( 'UpdateAttribs' . print_r($UpdateAttribs, 1 ) );
+		//error_log( 'UpdateAttribs' . print_r($UpdateAttribs, 1 ) );
 
 		// Set the updated user attributes in a one shot array
 		$graph_helper->set_user_attributes( $GraphToken, $AzUserId, $UpdateAttribs );
@@ -488,7 +500,7 @@ function aadb2c_patch_wc_meta_to_b2c()
 	//$UpdateCustomAttribs['wc_shipping_first_name'] = 'AssMann';
 	// Well that worked, so the problem in sin the if statement logic below!
 
-	error_log( 'local_usermeta' . print_r($local_usermeta, 1 ) );
+	//error_log( 'local_usermeta' . print_r($local_usermeta, 1 ) );
 
 	// figure this our out maybe just overwrite, or just make this take an arry and not 5million calls and do the comparison work in the backend
 
@@ -525,7 +537,7 @@ function aadb2c_patch_wc_meta_to_b2c()
 	if ( isset($local_usermeta['shipping_last_name']) && $local_usermeta['shipping_last_name'] != $remote_userdata->wc_shipping_last_name )
 		$UpdateCustomAttribs['wc_shipping_last_name'] = $local_usermeta['shipping_last_name'];
 	
-	if ( isset($local_usermeta['shipping_address_1']) && $local_usermeta['shipping_address_1'] != $remote_userdata->wc_shipping_address_1 )
+	if ( isset($local_usermeta['shipping_address_1']) && $local_usermeta['shipping_address_1'] != $remote_userdata->wc_shipping_address )
 		$UpdateCustomAttribs['wc_shipping_address'] = $local_usermeta['shipping_address_1'];
 
 	if ( isset($local_usermeta['shipping_postcode']) && $local_usermeta['shipping_postcode'] != $remote_userdata->wc_shipping_postcode )
@@ -545,7 +557,7 @@ function aadb2c_patch_wc_meta_to_b2c()
 
 	//$locale = $graph_helper->set_user_custom_extension( $GraphToken, $AzUserId, 'app_locale';
 	if(!empty($UpdateCustomAttribs)) {
-		error_log( 'UpdateCustomAttribs' . print_r($UpdateCustomAttribs, 1 ) );
+		//error_log( 'UpdateCustomAttribs' . print_r($UpdateCustomAttribs, 1 ) );
 
 		// set Custom attributes as one call 
 		$graph_helper->set_user_custom_extensions( $GraphToken, $AzUserId, $UpdateCustomAttribs );
@@ -553,33 +565,33 @@ function aadb2c_patch_wc_meta_to_b2c()
 
 }
 
-
 //add_action( 'profile_update', 'aadb2c_when_profile_update', 10, 2 );
 if (AADB2C_Settings::$EnableGraphArrtibuteSync) {
 	add_action( 'woocommerce_customer_object_updated_props', 'aadb2c_when_profile_update', 10, 2 );
 }
 
-function aadb2c_when_profile_update( $user_id, $old_user_data ) {
+function aadb2c_when_profile_update( $customer, $updated_props ) {
+	//&& !is_page(get_option( 'woocommerce_checkout_page_id' ))
     if (is_user_logged_in()) { 
         // User Updating profile info when logged in 
 		// The user log in and update some data within his profile and save (profile_update gets called here)
 		// Here we call the function to sync this local update up to b2c
 		aadb2c_patch_wc_meta_to_b2c();
     } else { 
-        if (empty($old_user_data->user_activation_key)) { 
+        if (empty($updated_props->user_activation_key)) { 
 			// Registering - user's first registration step
 			// The user fills email and username and save (profile_update gets called here), 
 			// being presented the request to check email for the verification process
 			// So here we do nothing
         }
     }
-	
+	/*
 	if ( isset($_GET['redirect_to']) ) {
 		wp_safe_redirect( get_permalink($_GET['redirect_to']) );
 	} else { 
 		wp_safe_redirect($_SERVER['HTTP_REFERER']);
 	}
-	
+	*/
 	exit();
 }
 
@@ -598,31 +610,39 @@ add_action( 'woocommerce_edit_account_form', 'aadb2c_remove_edit_account_links' 
 // 			jQuery('#account_email').remove();
 // ok this is fun, now we keep the email address field, but ignore when it is changed!
 function aadb2c_remove_edit_account_links() {
-    wc_enqueue_js( "
-        jQuery(document).ready(function() {
-			jQuery('#post-56 > div.post-inner.thin > div > div > div > form > fieldset').remove();
-        });
-    " );
+	if ( is_page(get_option( 'woocommerce_myaccount_page_id' ))) {
+		wc_enqueue_js( "
+			jQuery(document).ready(function() {
+				jQuery('#post-56 > div.post-inner.thin > div > div > div > form > fieldset').remove();
+			});
+		" );
+	}
 }
 
+// This strips out the dashboard text about resetting your password and just leaves, edit you account, but here hardcoded to german, maybe fix later. 
 add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_password_link' );
 function aadb2c_remove_edit_password_link() {
-    wc_enqueue_js( "
-        jQuery(document).ready(function() {
-			jQuery('#post-56 > div.post-inner.thin > div > div > div > p:nth-child(3) > a:nth-child(3)').text('Kontodetails bearbeiten');
-        });
-    " );
+    if ( is_page(get_option( 'woocommerce_myaccount_page_id' ))) {
+		wc_enqueue_js( "
+			jQuery(document).ready(function() {
+				jQuery('#post-56 > div.post-inner.thin > div > div > div > p:nth-child(3) > a:nth-child(3)').text('Kontodetails bearbeiten');
+			});
+		" );
+	}
 }
 
 
 //#post-56 > div.post-inner.thin > div > div > div > form > fieldset > legend
 //#post-56 > div.post-inner.thin > div > div > div > form > fieldset > p:nth-child(2) > span
 
+// This will surpress the editing of the email address on the my account page, user can change it but its rejected from the forum submit
 add_action( 'woocommerce_save_account_details_errors', 'remove_email_from_edit_account_process', 10, 2 );
 function remove_email_from_edit_account_process( $errors, $user ) {
+	if ( is_page(get_option( 'woocommerce_myaccount_page_id' ))) {
         if ( ! empty( $user->user_email ) ) {
-                unset($user->user_email);
-        }
+			unset($user->user_email);
+		}
+	}
 }
 
 
@@ -701,64 +721,18 @@ Account creation	Account creation Allow customers to create an account during ch
 */	
 function aadb2c_check_if_logged_in()
 {
-	$pageid = get_option( 'woocommerce_checkout_page_id' );
-	if(!is_user_logged_in() && is_page($pageid))
+	//$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
+	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_checkout_page_id' )))
 	{
-		aadb2c_login();
-		exit;
+		aadb2c_login_custom('https://preorder.kekz.com/kasse/');
 	}
 
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
-		aadb2c_login();
-		exit;
+		aadb2c_login_custom('https://preorder.kekz.com/mein-konto/');
 	}
+	exit;
 }
-
-/*
-//sudo cp /var/www/html/wp-content/themes/twentytwenty /var/www/html/wp-content/themes/twentytwenty-kekz-mod
-sudo mkdir /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce
-sudo mkdir /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce/myaccount
-
-sudo cp /var/www/html/wp-content/plugins/woocommerce/templates/myaccount/form-edit-account.php /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce/myaccount/form-edit-account.php
-^ Mod this to cut out email and password sections
-
-sudo nano /var/www/html/wp-content/themes/twentytwenty-kekzmod/style.css
-
-/*
-Theme Name: Twenty Twenty Kekz Mod Child Theme
-Description: Kekz Mod Twenty Twenty Child Theme
-Template: twentytwenty
-Tags: child theme, twentytwenty
-*/
-
-/*
-sudo nano /var/www/html/wp-content/themes/twentytwenty-kekzmod/functions.php
-<?php
-
-add_action( 'wp_enqueue_scripts', 'enqueue_parent_styles' );
-function enqueue_parent_styles() {
-	wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
-}
-
-add_action( 'after_setup_theme', 'kekzmodtheme_add_woocommerce_support' );
-function kekzmodtheme_add_woocommerce_support() {
-	add_theme_support( 'woocommerce' );
-}
-
-add_action( 'woocommerce_save_account_details_errors', array( $this, 'remove_email_from_edit_account_process' ), 10, 2 );
-public function remove_email_from_edit_account_process( $errors, $user ) {
-	if ( ! empty( $user->user_email ) ) {
-		unset($user->user_email);
-	}
-}
-
->End
-
-sudo chown -R 33:33 /var/www/html/wp-content/themes/twentytwenty-kekzmod
-
-
-*/
 
 
 // later add a toggle is settings to enable / disable this

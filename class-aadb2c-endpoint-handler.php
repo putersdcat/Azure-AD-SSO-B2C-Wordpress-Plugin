@@ -74,13 +74,14 @@ class AADB2C_Endpoint_Handler
 	/** 
 	 * Obtains the authorization endpoint from the metadata
 	 * and adds the necessary query arguments.
+	 * B
 	 */
 	public function get_authorization_endpoint_set_redirect($custom_redirect_uri)
 	{
 		$authorization_endpoint = $this->metadata['authorization_endpoint'] .
 			'&response_type=' . AADB2C_Settings::$response_type .
 			'&client_id=' . AADB2C_Settings::$clientID .
-			'&redirect_uri=' . $custom_redirect_uri .
+			'&redirect_uri=' . $custom_redirect_uri . // Be sure you add this to the allow list in B2B!
 			'&response_mode=' . AADB2C_Settings::$response_mode .
 			'&scope=' . AADB2C_Settings::$scope;
 		return $authorization_endpoint;
