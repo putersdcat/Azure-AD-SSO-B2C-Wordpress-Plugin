@@ -585,14 +585,18 @@ function aadb2c_when_profile_update( $customer, $updated_props ) {
 			// So here we do nothing
         }
     }
+
+	// Dont redirect on ever, what was this even for? 
 	/*
-	if ( isset($_GET['redirect_to']) ) {
-		wp_safe_redirect( get_permalink($_GET['redirect_to']) );
-	} else { 
-		wp_safe_redirect($_SERVER['HTTP_REFERER']);
+	if  ( !is_page(get_option( 'woocommerce_checkout_page_id' )) ) {
+		if ( isset($_GET['redirect_to']) ) {
+			wp_safe_redirect( get_permalink($_GET['redirect_to']) );
+		} else { 
+			wp_safe_redirect($_SERVER['HTTP_REFERER']);
+		}
 	}
 	*/
-	exit();
+	//exit(); <----- THIS EXIT WAS VERY BAD BROKE CKECKOUT, KEPT FOR REMINDER
 }
 
 // need to add toggle to UI
@@ -725,13 +729,14 @@ function aadb2c_check_if_logged_in()
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_checkout_page_id' )))
 	{
 		aadb2c_login_custom('https://preorder.kekz.com/kasse/');
+		exit();
 	}
 
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
 		aadb2c_login_custom('https://preorder.kekz.com/mein-konto/');
+		exit();
 	}
-	exit;
 }
 
 
