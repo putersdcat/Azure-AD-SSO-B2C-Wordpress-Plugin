@@ -593,16 +593,36 @@ function aadb2c_when_profile_update( $user_id, $old_user_data ) {
 // but i just show firstname lastname and display name, except we cant do this, because will it sync back? well maybe,
 // because we do try and get the claims and sync them back to local on an account edit call.
 // but will the un-filtered nulls break something or over write good local values, who knows, im going to bed.
-// add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_account_links' );
+add_action( 'woocommerce_edit_account_form', 'aadb2c_remove_edit_account_links' );
 // Remove "Edit" links from My Account > Addresses
+// 			jQuery('#account_email').remove();
+// ok this is fun, now we keep the email address field, but ignore when it is changed!
 function aadb2c_remove_edit_account_links() {
     wc_enqueue_js( "
         jQuery(document).ready(function() {
-			jQuery('#account_email').remove();
-			jQuery('#post-56 > div.post-inner.thin > div > div > div > form > p:nth-child(6) > label').remove();
-			jQuery($('#post-56 > div.post-inner.thin > div > div > div > form > fieldset').remove();
+			jQuery('#post-56 > div.post-inner.thin > div > div > div > form > fieldset').remove();
         });
     " );
+}
+
+add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_password_link' );
+function aadb2c_remove_edit_password_link() {
+    wc_enqueue_js( "
+        jQuery(document).ready(function() {
+			jQuery('#post-56 > div.post-inner.thin > div > div > div > p:nth-child(3) > a:nth-child(3)').text('Kontodetails bearbeiten');
+        });
+    " );
+}
+
+
+//#post-56 > div.post-inner.thin > div > div > div > form > fieldset > legend
+//#post-56 > div.post-inner.thin > div > div > div > form > fieldset > p:nth-child(2) > span
+
+add_action( 'woocommerce_save_account_details_errors', 'remove_email_from_edit_account_process', 10, 2 );
+function remove_email_from_edit_account_process( $errors, $user ) {
+        if ( ! empty( $user->user_email ) ) {
+                unset($user->user_email);
+        }
 }
 
 
@@ -625,8 +645,8 @@ function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
 	// $new = array( 'link1' => 'Link 1', 'link2' => 'Link 2' );
  
 	//Kontodetails bearbeiten
-	$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen', 'konto-details-bearbeiten' => 'Kontodetails' );
-	//$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen' );
+	//$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen', 'konto-details-bearbeiten' => 'Kontodetails' );
+	$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen' );
 
 	// array_slice() is good when you want to add an element between the other ones
 	$menu_links = array_slice( $menu_links, 0, 1, true ) 
@@ -648,16 +668,19 @@ function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
 
 // point the endpoint to a custom URL
 function aadb2c_custom_wc_my_account_endpoints( $url, $endpoint ){
+	$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
 	if( $endpoint == 'kennwort-reset' ) {
 		// Return URL for password_reset endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
-		return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset'; // Your custom URL to add to the My Account menu
+		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset'; // Your custom URL to add to the My Account menu
+		return $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . '&state=password_reset'; // Your custom URL to add to the My Account menu	
 	}
 
 	if( $endpoint == 'konto-details-bearbeiten' ) {
 		// Return URL for edit_profile endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$edit_profile_policy);
-		return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=edit_profile'; // Your custom URL to add to the My Account menu
+		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=edit_profile'; // Your custom URL to add to the My Account menu
+		return $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . '&state=edit_profile'; // Your custom URL to add to the My Account menu	
 	}
 
 	return $url;
@@ -684,13 +707,58 @@ function aadb2c_check_if_logged_in()
 		aadb2c_login();
 		exit;
 	}
-	
+
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
 		aadb2c_login();
 		exit;
 	}
 }
+
+/*
+//sudo cp /var/www/html/wp-content/themes/twentytwenty /var/www/html/wp-content/themes/twentytwenty-kekz-mod
+sudo mkdir /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce
+sudo mkdir /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce/myaccount
+
+sudo cp /var/www/html/wp-content/plugins/woocommerce/templates/myaccount/form-edit-account.php /var/www/html/wp-content/themes/twentytwenty-kekzmod/woocommerce/myaccount/form-edit-account.php
+^ Mod this to cut out email and password sections
+
+sudo nano /var/www/html/wp-content/themes/twentytwenty-kekzmod/style.css
+
+/*
+Theme Name: Twenty Twenty Kekz Mod Child Theme
+Description: Kekz Mod Twenty Twenty Child Theme
+Template: twentytwenty
+Tags: child theme, twentytwenty
+*/
+
+/*
+sudo nano /var/www/html/wp-content/themes/twentytwenty-kekzmod/functions.php
+<?php
+
+add_action( 'wp_enqueue_scripts', 'enqueue_parent_styles' );
+function enqueue_parent_styles() {
+	wp_enqueue_style( 'parent-style', get_template_directory_uri() . '/style.css' );
+}
+
+add_action( 'after_setup_theme', 'kekzmodtheme_add_woocommerce_support' );
+function kekzmodtheme_add_woocommerce_support() {
+	add_theme_support( 'woocommerce' );
+}
+
+add_action( 'woocommerce_save_account_details_errors', array( $this, 'remove_email_from_edit_account_process' ), 10, 2 );
+public function remove_email_from_edit_account_process( $errors, $user ) {
+	if ( ! empty( $user->user_email ) ) {
+		unset($user->user_email);
+	}
+}
+
+>End
+
+sudo chown -R 33:33 /var/www/html/wp-content/themes/twentytwenty-kekzmod
+
+
+*/
 
 
 // later add a toggle is settings to enable / disable this
