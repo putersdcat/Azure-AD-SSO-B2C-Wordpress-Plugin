@@ -1,9 +1,9 @@
 <?php
 
 /**
- * Plugin Name: No Prod Use - Azure AD SSO B2C w/ WC Support
+ * Plugin Name: Azure AD SSO B2C w/ WooCommerce Support
  * Plugin URI: https://github.com/putersdcat/Azure-B2C-Wordpress-Plugin
- * Description: A nasty fork in progress of a plugin that allows users to log in using B2C policies 
+ * Description: A fork in progress of a plugin that allows users to log in using Az Ad B2C policies, and sync WC MetaData from Custom attributes in Az Ad
  * Version: 0.1
  * Author: Microsoft Alumni
  * Author URI: https://azure.microsoft.com/en-us/documentation/services/active-directory-b2c/
@@ -31,6 +31,16 @@ $aadb2c_settings = new AADB2C_Settings();
 
 //*****************************************************************************************
 
+/**
+ * Adds a link to setting page in WP Plugin manager.
+ */
+function aadb2c_plugin_settings_link($links) { 
+	$settings_link = '<a href="options-general.php?page=aad-b2c-settings-page">Settings</a>'; 
+	array_unshift($links, $settings_link); 
+	return $links; 
+}
+$plugin = plugin_basename(__FILE__); 
+add_filter("plugin_action_links_$plugin", 'aadb2c_plugin_settings_link' );
 
 /**
  * Redirects to B2C on a user login request.

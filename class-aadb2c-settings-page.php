@@ -28,10 +28,11 @@ class AADB2C_Settings_Page
             'Settings Admin',
             'B2C Authentication Settings',
             'manage_options',
-            'b2c-settings-page',
+            'aad-b2c-settings-page',
             array($this, 'create_AADB2C_page')
         );
     }
+
 
     /**
      * B2C Options page callback

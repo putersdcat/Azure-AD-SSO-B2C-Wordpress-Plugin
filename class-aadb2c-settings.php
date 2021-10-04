@@ -16,9 +16,9 @@ class AADB2C_Settings
 
 	public static $Replace_WpLogin = 0;
 	public static $RequireLoginToAccess_WC_Cart = 1;
-	public static $Remove_WC_MyAccount_Password_Email_Links = 1;
+	public static $Custom_WC_MyAccount_Password_Email_Links = 1;
 
-	
+
 	// These settings define the authentication flow, but are not configurable on the settings page
 	// because this plugin is made to support OpenID Connect implicit flow with form post responses
 	public static $response_type = "id_token";
