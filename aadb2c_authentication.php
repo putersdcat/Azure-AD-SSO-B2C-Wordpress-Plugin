@@ -31,18 +31,6 @@ $aadb2c_settings = new AADB2C_Settings();
 
 //*****************************************************************************************
 
-/*
-class AADB2C {
-
-	//static $instance = FALSE;
-
-	private $settings = null;
-	
-	public function __construct( $settings) {
-		$this->settings = $settings;
-	}
-}
-*/
 
 /**
  * Redirects to B2C on a user login request.
@@ -170,12 +158,14 @@ function aadb2c_verify_token()
 
 				$first_name = $token_checker->get_claim('given_name');
 				$last_name = $token_checker->get_claim('family_name');
-				// $display_name = $token_checker->get_claim('displayName'); // <-- Need to debug this one, not sure, just guessed... I was wrong!
 				$display_name = $token_checker->get_claim('name');
-				$billing_first_name = $token_checker->get_claim('extension_wc_billing_given_name');
+				if (stripos($display_name, 'unknown') !== false) { // on new user first prov in b2c unknown is returned - Case insensitive
+					$display_name = $first_name . ' ' . $last_name;
+				}
+				$billing_first_name = $token_checker->get_claim('extension_wc_billing_first_name');
 				$billing_last_name = $token_checker->get_claim('extension_wc_billing_last_name');
 				$billing_address_1 = $token_checker->get_claim('extension_wc_billing_address');
-				$billing_postcode = $token_checker->get_claim('extension_wc_billing_postalCode');
+				$billing_postcode = $token_checker->get_claim('extension_wc_billing_postcode');
 				$billing_city = $token_checker->get_claim('extension_wc_billing_city');
 				$billing_state = $token_checker->get_claim('extension_wc_billing_state');
 				$billing_country = $token_checker->get_claim('extension_wc_billing_country');
@@ -191,6 +181,7 @@ function aadb2c_verify_token()
 				$shipping_phone = $token_checker->get_claim('extension_wc_shipping_phone');
 				$locale = $token_checker->get_claim('extension_app_locale');
 
+				// This is new user first logon
 				$our_userdata = array(
 					'ID' => 0,
 					'user_login' => $email,
@@ -198,11 +189,15 @@ function aadb2c_verify_token()
 					'user_registered' => date('Y-m-d H:i:s'),
 					'user_status' => 0,
 					'user_email' => $email,
-					'display_name' => $first_name . ' ' . $last_name,
-					//'display_name' => $display_name,
 					'first_name' => $first_name,
 					'last_name' => $last_name,
+					//'display_name' => $first_name . ' ' . $last_name,
+					'display_name' => $display_name,
 					//'role' => customer, it looks like in the WC code when this is null it will default to customer, lets see.
+				);
+
+				// This is new user first logon
+				$our_wc_usermeta = array(
 					'billing_first_name' => $billing_first_name,
 					'billing_last_name' => $billing_last_name,
 					'billing_address_1' => $billing_address_1,
@@ -222,37 +217,25 @@ function aadb2c_verify_token()
 					'shipping_phone' => $shipping_phone,
 					//'locale' => $locale,
 				);
-
-				// EWA: Dev Notes
-				/**
-				 * https://github.com/AzureAD/active-directory-b2c-wordpress-plugin-openidconnect/pull/20#issuecomment-466618039
-				 * @peterspliid, I just started using this AD B2C Wordpress plugin and I like your changes for updating user meta fields from the AD B2C custom attributes.
-				 * May I ask why you require the use of an action hook rather than just calling update_user_meta() in b2c_verify_token() after the calls to wp_insert_user() and wp_update_user().
-				 * Is it so you can more easily control which AD B2C custom attributes are added to Wordpress?
-				 * Thanks for the work on this plugin!
-				 * @ArthurDumas Sorry for the late response. Yes you are correct. 
-				 * You might want to map fields from AD B2C to your custom wordpress fields, or process or verify the data before inserting it. 
-				 * It is generally good practice to use actions or filters when it comes to custom data
-				 */
-				
-				//update_option("aadb2c_wc_claims", $our_userdata);
 
 				// This is where the collected user data is joined into the WP / WC user data on sign in or sign up call.
 				$userID = wp_insert_user($our_userdata);
 				update_user_meta($userID, 'aadb2c_object_id', sanitize_text_field($object_id));
+				// this is new
+				aadb2c_update_wc_profile_meta_from_claims( $userID, $our_wc_usermeta);
 				do_action('aadb2c_new_userdata', $userID, $token_checker->get_payload());
 			} else if ($policy == AADB2C_Settings::$edit_profile_policy) { // Update the existing user w/ new attritubtes
 
-
-				
 				$first_name = $token_checker->get_claim('given_name');
 				$last_name = $token_checker->get_claim('family_name');
-				// $display_name = $token_checker->get_claim('displayName'); // <-- Need to debug this one, not sure, just guessed... I was wrong!
 				$display_name = $token_checker->get_claim('name');
-				$billing_first_name = $token_checker->get_claim('extension_wc_billing_given_name');
+				if (stripos($display_name, 'unknown') !== false) { // on new user first prov in b2c unknown is returned - Case insensitive
+					$display_name = $first_name . ' ' . $last_name;
+				}
+				$billing_first_name = $token_checker->get_claim('extension_wc_billing_first_name');
 				$billing_last_name = $token_checker->get_claim('extension_wc_billing_last_name');
 				$billing_address_1 = $token_checker->get_claim('extension_wc_billing_address');
-				$billing_postcode = $token_checker->get_claim('extension_wc_billing_postalCode');
+				$billing_postcode = $token_checker->get_claim('extension_wc_billing_postcode');
 				$billing_city = $token_checker->get_claim('extension_wc_billing_city');
 				$billing_state = $token_checker->get_claim('extension_wc_billing_state');
 				$billing_country = $token_checker->get_claim('extension_wc_billing_country');
@@ -267,19 +250,17 @@ function aadb2c_verify_token()
 				$shipping_country = $token_checker->get_claim('extension_wc_shipping_country');
 				$shipping_phone = $token_checker->get_claim('extension_wc_shipping_phone');
 				$locale = $token_checker->get_claim('extension_app_locale');
-
+				
+				// This is existing wp user running the edit profile routine, not really used!
 				$our_userdata = array(
-					'ID' => 0,
-					'user_login' => $email,
-					'user_pass' => NULL,
-					'user_registered' => date('Y-m-d H:i:s'),
-					'user_status' => 0,
-					'user_email' => $email,
-					'display_name' => $first_name . ' ' . $last_name,
-					//'display_name' => $display_name,
+					'ID' => $user->ID,
 					'first_name' => $first_name,
 					'last_name' => $last_name,
-					//'role' => customer, it looks like in the WC code when this is null it will default to customer, lets see.
+					'display_name' => $display_name,
+				);
+
+				// This is existing wp user running the edit profile routine, not really used!
+				$our_wc_usermeta = array(
 					'billing_first_name' => $billing_first_name,
 					'billing_last_name' => $billing_last_name,
 					'billing_address_1' => $billing_address_1,
@@ -299,18 +280,13 @@ function aadb2c_verify_token()
 					'shipping_phone' => $shipping_phone,
 					//'locale' => $locale,
 				);
-
-				//update_option("aadb2c_wc_claims", $our_userdata);
-
-				// blast through array of date pulled above and populate anything locally that is not 
-				//foreach($our_userdata as $key => $value) {
-				//	update_user_meta( $userID, $key, $value );
-				//}
-
+				
 				// This is where the collected user data is joined into the WP / WC user data on edit profile call.
 
 				$userID = wp_update_user($our_userdata);
 				update_user_meta($userID, 'aadb2c_object_id', sanitize_text_field($object_id));
+				// this is new
+				aadb2c_update_wc_profile_meta_from_claims( $userID, $our_wc_usermeta);
 				do_action('aadb2c_update_userdata', $userID, $token_checker->get_payload());
 			} else {
 				// else user exists and we did not call from edit whatever...
@@ -346,6 +322,56 @@ function aadb2c_verify_token()
 	}
 }
 
+/** 
+ * 
+ * This function can be called on logins to process the claims returned by Az B2C and apply them locally when possible.
+ * 
+ */
+function aadb2c_update_wc_profile_meta_from_claims( $WcUserId, $UserClaims = array() )
+{
+	
+    // Get all user meta data for $user_id
+	$local_usermeta = get_user_meta( $WcUserId ); // It returns an Array or arrays, so we flatten below.
+	
+	// assoiciative flattner - with this we avoid the need to use $local_usermeta['billing_first_name'][0] for all values
+	$local_usermeta = array_filter( array_map( function( $value ) { 
+		return $value[0];
+	}, $local_usermeta ) );
+
+    
+    /*
+				// This is existing wp user running the edit profile routine, not really used!
+				$our_wc_usermeta = array(
+					'billing_first_name' => $billing_first_name,
+					'billing_last_name' => $billing_last_name,
+					'billing_address_1' => $billing_address_1,
+					'billing_postcode' => $billing_postcode,
+					'billing_city' => $billing_city,
+					'billing_state' => $billing_state,
+					'billing_country' => $billing_country,
+					'billing_phone' => $billing_phone,
+					'billing_email' => $billing_email,
+					'shipping_first_name' => $shipping_first_name,
+					'shipping_last_name' => $shipping_last_name,
+					'shipping_address_1' => $shipping_address_1,
+					'shipping_postcode' => $shipping_postcode,
+					'shipping_city' => $shipping_city,
+					'shipping_state' => $shipping_state,
+					'shipping_country' => $shipping_country,
+					'shipping_phone' => $shipping_phone,
+					//'locale' => $locale,
+				);
+    */
+
+    // blast through array and update any local values that are not equal.
+    foreach($UserClaims as $key => $value) {
+        //if ( isset($local_usermeta[$key]) && $local_usermeta[$key] != $value )
+        if ( !empty($value) && $local_usermeta[$key] != $value ) {
+            update_user_meta( $WcUserId, $key, $value );
+        }
+    }
+
+}
 
 /** 
  * Redirects to B2C's edit profile policy when user edits their profile.
