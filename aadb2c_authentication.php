@@ -61,7 +61,8 @@ function aadb2c_login_custom($custom_redirect_uri)
 {
 	try {
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$generic_policy);
-		$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . "&state=generic";
+		//$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . "&state=generic~" . urlencode($custom_redirect_uri);
+		$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint() . "&state=generic~" . urlencode($custom_redirect_uri);
 		wp_redirect($authorization_endpoint);
 	} catch (Exception $e) {
 		echo $e->getMessage();
@@ -122,10 +123,12 @@ function aadb2c_verify_token()
 
 		if (isset($_POST[AADB2C_RESPONSE_MODE])) {
 			// Check which authorization policy was used
-			switch ($_POST['state']) {
+			$stateType = explode('~', $_POST['state']);
+			//switch ($_POST['state']) {
+			switch ($stateType[0]) {
 				case 'generic':
 					$policy = AADB2C_Settings::$generic_policy;
-					break;
+				break;
 				case 'admin':
 					$policy = AADB2C_Settings::$admin_policy;
 					break;
@@ -135,6 +138,14 @@ function aadb2c_verify_token()
 				default:
 					// Not a B2C request, ignore.
 					return;
+			}
+
+			// Grab the ReturnUri if it was appended onto the state parameter
+			if (!empty( $stateType[1] ) )
+			{
+					$ReturnUri = $stateType[1];
+			} else {
+					$ReturnUri = site_url() . '/';
 			}
 
 			// Verifies token only if the checkbox "Verify tokens" is checked on the settings page
@@ -323,7 +334,10 @@ function aadb2c_verify_token()
 			do_action('aadb2c_post_login');
 
 			// Redirect to home page
-			wp_safe_redirect(site_url() . '/');
+			//wp_safe_redirect(site_url() . '/');
+			
+			wp_safe_redirect($ReturnUri);
+			
 			exit;
 		}
 	} catch (Exception $e) {
@@ -734,7 +748,7 @@ function aadb2c_custom_wc_my_account_endpoints( $url, $endpoint ){
 		// Return URL for password_reset endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
 		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset'; // Your custom URL to add to the My Account menu
-		return $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . '&state=password_reset'; // Your custom URL to add to the My Account menu	
+		return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset~' . urlencode($custom_redirect_uri); // Your custom URL to add to the My Account menu	
 	}
 
 	// This one is not in use, and should not be used in normal operation.
@@ -743,7 +757,7 @@ function aadb2c_custom_wc_my_account_endpoints( $url, $endpoint ){
 		// Return URL for edit_profile endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$edit_profile_policy);
 		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=edit_profile'; // Your custom URL to add to the My Account menu
-		return $aadb2c_endpoint_handler->get_authorization_endpoint_set_redirect($custom_redirect_uri) . '&state=edit_profile'; // Your custom URL to add to the My Account menu	
+		return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=edit_profile~' . urlencode($custom_redirect_uri); // Your custom URL to add to the My Account menu	
 	}
 
 	return $url;
@@ -764,6 +778,7 @@ Account creation	Account creation Allow customers to create an account during ch
 */	
 function aadb2c_check_if_logged_in()
 {
+	// https://rudrastyh.com/woocommerce/get-page-urls.html
 	//$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_checkout_page_id' )))
 	{

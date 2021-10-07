@@ -26,7 +26,7 @@ class AADB2C_Settings_Page
     {
         add_options_page(
             'Settings Admin',
-            'B2C Authentication Settings',
+            'AAD B2C Authentication Settings',
             'manage_options',
             'aad-b2c-settings-page',
             array($this, 'create_AADB2C_page')
@@ -149,6 +149,15 @@ class AADB2C_Settings_Page
         );
 
         add_settings_field(
+            // The legacy graph endpoint url where patch api calls are sent for setting user properties in Az Ad
+            'aadb2c_legacy_graph_endpoint', // ID
+            'The legacy graph endpoint url where patch api calls are sent for setting user properties in Az Ad', // Title 
+            array($this, 'aadb2c_legacy_graph_endpoint_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
             // Parent AzAd Tenant ID where b2c AzAd resource exists 
             'aadb2c_tenant_id_parent_azad', // ID
             'Parent AzAd (Tenant ID) where b2c AzAd resource exists', // Title 
@@ -228,6 +237,9 @@ class AADB2C_Settings_Page
         
         if (isset($input['aadb2c_tenant_id_parent_azad']))
         $new_input['aadb2c_tenant_id_parent_azad'] = sanitize_text_field($input['aadb2c_tenant_id_parent_azad']);
+        
+        if (isset($input['aadb2c_legacy_graph_endpoint']))
+        $new_input['aadb2c_legacy_graph_endpoint'] = sanitize_text_field($input['aadb2c_legacy_graph_endpoint']);
 
         $new_input['aadb2c_verify_tokens'] = $input['aadb2c_verify_tokens'];
 
@@ -366,6 +378,19 @@ class AADB2C_Settings_Page
             isset($this->options['aadb2c_tenant_id_parent_azad']) ? esc_attr($this->options['aadb2c_tenant_id_parent_azad']) : ''
         );
     }
+    
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_legacy_graph_endpoint_callback()
+    {
+        printf(
+            '<input type="text" id="aadb2c_legacy_graph_endpoint_callback" name="aadb2c_config_elements[aadb2c_legacy_graph_endpoint]" value="%s" />'
+                . '<br/><i>The legacy graph endpoint url where patch api calls are sent for getting and setting user properties in Az Ad.</i>',
+            isset($this->options['aadb2c_legacy_graph_endpoint']) ? esc_attr($this->options['aadb2c_legacy_graph_endpoint']) : ''
+        );
+    }
+
     /** 
      * Get the settings option array and print one of its values
      */
@@ -408,8 +433,6 @@ class AADB2C_Settings_Page
 
         echo '<input type="checkbox" id="aadb2c_RequireLoginToAccess_WC_Cart" name="aadb2c_config_elements[aadb2c_RequireLoginToAccess_WC_Cart]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
     }
-
-
 
     /** 
      * Get the settings option array and print one of its values

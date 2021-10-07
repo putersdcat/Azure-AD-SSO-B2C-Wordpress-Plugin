@@ -29,7 +29,7 @@ class AADB2C_Settings
 	public static $EnableGraphArrtibuteSync = 1;
 	public static $clientSecret = "";
 	public static $extensions_app_client_id = "";
-	public static $graph_endpoint = 'https://graph.windows.net';	// The URI of the Microsoft Graph API.
+	public static $graph_endpoint = '';	// The URI of the Microsoft Graph API.
 	public static $graph_version = '1.6';	// v1.6 The version of the Microsoft Graph API to use.
 
 	// The URL to redirect to after signing out (of Azure AD, not WordPress).
@@ -64,6 +64,8 @@ class AADB2C_Settings
 			self::$extensions_app_client_id = $config_elements['aadb2c_extensions_app_client_id'];
 			self::$tenant_id_parent_azad = $config_elements['aadb2c_tenant_id_parent_azad'];
 			self::$redirect_uri = urlencode(site_url() . '/');
+			if (!isset($config_elements['aadb2c_legacy_graph_endpoint'])) self::$graph_endpoint = 'https://graph.windows.net';
+			else self::$graph_endpoint = $config_elements['aadb2c_legacy_graph_endpoint'];
 			if ($config_elements['aadb2c_Replace_WpLogin']) self::$Replace_WpLogin = 1;
 			else self::$Replace_WpLogin = 0;
 			if ($config_elements['aadb2c_RequireLoginToAccess_WC_Cart']) self::$RequireLoginToAccess_WC_Cart = 1;
