@@ -198,6 +198,13 @@ class AADB2C_Settings_Page
             'service_config_section' // Section           
         );
 
+        add_settings_field(
+            'aadb2c_ToggleOffHackyStuff', // ID
+            'Disable Some very custom settings not intended for general public use ;)', // Title 
+            array($this, 'aadb2c_ToggleOffHackyStuff_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
     }
 
     /**
@@ -248,6 +255,8 @@ class AADB2C_Settings_Page
         $new_input['aadb2c_RequireLoginToAccess_WC_Cart'] = $input['aadb2c_RequireLoginToAccess_WC_Cart'];
 
         $new_input['aadb2c_EnableGraphArrtibuteSync'] = $input['aadb2c_EnableGraphArrtibuteSync'];
+
+        $new_input['aadb2c_ToggleOffHackyStuff'] = $input['aadb2c_ToggleOffHackyStuff'];
 
         return $new_input;
     }
@@ -446,6 +455,20 @@ class AADB2C_Settings_Page
         $current_value = $this->options['aadb2c_EnableGraphArrtibuteSync'];
 
         echo '<input type="checkbox" id="aadb2c_EnableGraphArrtibuteSync" name="aadb2c_config_elements[aadb2c_EnableGraphArrtibuteSync]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+
+        /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_ToggleOffHackyStuff_callback()
+    {
+
+        if (empty($this->options['aadb2c_ToggleOffHackyStuff']))
+            $this->options['aadb2c_ToggleOffHackyStuff'] = 0;
+
+        $current_value = $this->options['aadb2c_ToggleOffHackyStuff'];
+
+        echo '<input type="checkbox" id="aadb2c_ToggleOffHackyStuff" name="aadb2c_config_elements[aadb2c_ToggleOffHackyStuff]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
     }
 
 }

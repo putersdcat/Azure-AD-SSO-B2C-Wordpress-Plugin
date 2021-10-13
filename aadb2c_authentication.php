@@ -620,6 +620,7 @@ if (AADB2C_Settings::$EnableGraphArrtibuteSync) {
 	add_action( 'woocommerce_customer_object_updated_props', 'aadb2c_when_profile_update', 10, 2 );
 }
 
+
 function aadb2c_when_profile_update( $customer, $updated_props ) {
 	//&& !is_page(get_option( 'woocommerce_checkout_page_id' ))
     if (is_user_logged_in()) { 
@@ -649,17 +650,21 @@ function aadb2c_when_profile_update( $customer, $updated_props ) {
 	//exit(); <----- THIS EXIT WAS VERY BAD BROKE CKECKOUT, KEPT FOR REMINDER
 }
 
-// need to add toggle to UI
-//if (AADB2C_Settings::$Custom_WC_MyAccount_Password_Email_Links) {
+// 
+if (!AADB2C_Settings::$ToggleOffHackyStuff) {
 	add_filter ( 'woocommerce_account_menu_items', 'aadb2c_set_custom_WC_MyAccount_Password_Email_Links' );
 	add_filter( 'woocommerce_get_endpoint_url', 'aadb2c_custom_wc_my_account_endpoints', 10, 2 );
-//}
+	add_action( 'woocommerce_save_account_details_errors', 'remove_email_from_edit_account_process', 10, 2 );
+	add_action( 'woocommerce_edit_account_form', 'aadb2c_remove_edit_account_links' );
+	add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_password_link' );
+}
+
 
 // This dirty shit works, but form completion check on email address breaks it, so im resorting to re-direct to azure b2b
 // but i just show firstname lastname and display name, except we cant do this, because will it sync back? well maybe,
 // because we do try and get the claims and sync them back to local on an account edit call.
 // but will the un-filtered nulls break something or over write good local values, who knows, im going to bed.
-add_action( 'woocommerce_edit_account_form', 'aadb2c_remove_edit_account_links' );
+//add_action( 'woocommerce_edit_account_form', 'aadb2c_remove_edit_account_links' );
 // Remove "Edit" links from My Account > Addresses
 // 			jQuery('#account_email').remove();
 // ok this is fun, now we keep the email address field, but ignore when it is changed!
@@ -674,7 +679,7 @@ function aadb2c_remove_edit_account_links() {
 }
 
 // This strips out the dashboard text about resetting your password and just leaves, edit you account, but here hardcoded to german, maybe fix later. 
-add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_password_link' );
+//add_action( 'woocommerce_account_dashboard', 'aadb2c_remove_edit_password_link' );
 function aadb2c_remove_edit_password_link() {
     if ( is_page(get_option( 'woocommerce_myaccount_page_id' ))) {
 		wc_enqueue_js( "
@@ -690,7 +695,7 @@ function aadb2c_remove_edit_password_link() {
 //#post-56 > div.post-inner.thin > div > div > div > form > fieldset > p:nth-child(2) > span
 
 // This will surpress the editing of the email address on the my account page, user can change it but its rejected from the forum submit
-add_action( 'woocommerce_save_account_details_errors', 'remove_email_from_edit_account_process', 10, 2 );
+//add_action( 'woocommerce_save_account_details_errors', 'remove_email_from_edit_account_process', 10, 2 );
 function remove_email_from_edit_account_process( $errors, $user ) {
 	if ( is_page(get_option( 'woocommerce_myaccount_page_id' ))) {
         if ( ! empty( $user->user_email ) ) {
@@ -713,13 +718,10 @@ function remove_billing_account_fields ( $billing_fields ) {
 }
 */
 
+// Add new Custom Menu Links (URLs) in My Account Menu 
 function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
- 
-	// Add new Custom Menu Links (URLs) in My Account Menu 
-	// $new = array( 'link1' => 'Link 1', 'link2' => 'Link 2' );
- 
+
 	//Kontodetails bearbeiten
-	//$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen', 'konto-details-bearbeiten' => 'Kontodetails' );
 	$new_links = array( 'kennwort-reset' => 'Kennwort zurücksetzen' );
 
 	// array_slice() is good when you want to add an element between the other ones
@@ -800,27 +802,30 @@ if (AADB2C_Settings::$RequireLoginToAccess_WC_Cart) {
 }
 
 
-/** 
- * Hooks onto the WP login action, so when user logs in on WordPress, user is redirected
- * to B2C's authorization endpoint. 
- */
+
 if (AADB2C_Settings::$Replace_WpLogin) {
+	/** 
+	 * Hooks onto the WP login action, so when user logs in on WordPress, user is redirected
+	 * to B2C's authorization endpoint. 
+	 */
 	add_action('wp_authenticate', 'aadb2c_login'); // disabled to allow WP Login
+
+	/** 
+	 * Hooks onto the WP lost password action, so user is redirected
+	 * to B2C's password reset endpoint. 
+	 * 
+	 * example.com/wp-login.php?action=lostpassword
+	 */
+	add_action('login_form_lostpassword', 'aadb2c_password_reset');
+
+	/**
+	 * Hooks onto the WP page load action, so when user request to edit their profile, 
+	 * they are redirected to B2C's edit profile endpoint.
+	 */
+	add_action('wp_loaded', 'aadb2c_edit_profile');
+
 }
 
-/** 
- * Hooks onto the WP lost password action, so user is redirected
- * to B2C's password reset endpoint. 
- * 
- * example.com/wp-login.php?action=lostpassword
- */
-add_action('login_form_lostpassword', 'aadb2c_password_reset');
-
-/**
- * Hooks onto the WP page load action, so when user request to edit their profile, 
- * they are redirected to B2C's edit profile endpoint.
- */
-add_action('wp_loaded', 'aadb2c_edit_profile');
 
 /** 
  * Hooks onto the WP page load action. When B2C redirects back to WordPress site,
@@ -834,6 +839,7 @@ add_action('wp_loaded', 'aadb2c_verify_token');
  * they are redirected to B2C's logout endpoint.
  */
 add_action('wp_logout', 'aadb2c_logout');
+
 
 
 // Utility functions removed from external class containers to try and debug token request process

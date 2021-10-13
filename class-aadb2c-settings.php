@@ -16,8 +16,8 @@ class AADB2C_Settings
 
 	public static $Replace_WpLogin = 0;
 	public static $RequireLoginToAccess_WC_Cart = 1;
-	public static $Custom_WC_MyAccount_Password_Email_Links = 1;
-
+	// added this to UI to be able to disable the janky stuff used in the Proofe Of Concept Dev Environment only, like jquery chopping up web code, etc. 
+	public static $ToggleOffHackyStuff = 1;
 
 	// These settings define the authentication flow, but are not configurable on the settings page
 	// because this plugin is made to support OpenID Connect implicit flow with form post responses
@@ -40,6 +40,8 @@ class AADB2C_Settings
 	// Parent AzAd Tenant ID where b2c AzAd resource exists: 
 	// https://login.microsoftonline.com/1c21b550-383a-44c4-b15a-ae55c2bf9415/oauth2/token
 	public static $tenant_id_parent_azad = '';
+
+
 
 	// flatten d1f9ccbb-2c4b-43a2-a5fd-9755f80e360f
 	// Moved to graph helper
@@ -72,6 +74,8 @@ class AADB2C_Settings
 			else self::$RequireLoginToAccess_WC_Cart = 0;
 			if ($config_elements['aadb2c_EnableGraphArrtibuteSync']) self::$EnableGraphArrtibuteSync = 1;
 			else self::$EnableGraphArrtibuteSync = 0;
+			if ($config_elements['aadb2c_ToggleOffHackyStuff']) self::$ToggleOffHackyStuff = 1;
+			else self::$ToggleOffHackyStuff = 0;
 			if ($config_elements['aadb2c_verify_tokens']) self::$verify_tokens = 1;
 			else self::$verify_tokens = 0;
 		}
