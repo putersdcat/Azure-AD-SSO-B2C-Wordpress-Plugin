@@ -346,6 +346,7 @@ function aadb2c_verify_token()
 	}
 }
 
+
 /** 
  * 
  * This function can be called on logins to process the claims returned by Az B2C and apply them locally when possible.
@@ -827,7 +828,6 @@ if (AADB2C_Settings::$Replace_WpLogin) {
 
 }
 
-
 /** 
  * Hooks onto the WP page load action. When B2C redirects back to WordPress site,
  * if an ID token is POSTed to a special path, b2c-token-verification, this verifies 
@@ -842,6 +842,22 @@ add_action('wp_loaded', 'aadb2c_verify_token');
 add_action('wp_logout', 'aadb2c_logout');
 
 
+/** 
+ * 
+ * This function can be called on logins to pickup the cart items again, added after CartPops plugin broke this
+ * 
+ */
+add_action( 'wp_login', 'aadb2c_get_cart_after_login', 99, 2 );
+function aadb2c_get_cart_after_login( $user_login, $user ) {
+	$saved_cart = get_user_meta( $user->ID, '_woocommerce_persistent_cart_' . get_current_blog_id(), true );
+	$cart       = WC()->session->cart;
+	$merge_cart = array_merge( $cart, $saved_cart['cart'] );
+
+	if ( ! empty( $merge_cart ) ) {
+		$saved_cart['cart'] = $merge_cart;
+		update_user_meta( $user->ID, '_woocommerce_persistent_cart_' . get_current_blog_id(), $saved_cart );
+	}
+}
 
 // Utility functions removed from external class containers to try and debug token request process
 /**
