@@ -746,7 +746,8 @@ function aadb2c_set_custom_WC_MyAccount_Password_Email_Links( $menu_links ){
 function aadb2c_custom_wc_my_account_endpoints( $url, $endpoint ){
 	
 	if( $endpoint == 'kennwort-reset' ) {
-		$custom_redirect_uri = 'https://preorder.kekz.com/mein-konto/';
+		// $ReturnUri = site_url() . '/';
+		$custom_redirect_uri = site_url() . '/mein-konto/';
 		// Return URL for password_reset endpoint
 		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
 		//return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset'; // Your custom URL to add to the My Account menu
@@ -784,13 +785,13 @@ function aadb2c_check_if_logged_in()
 	//$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_checkout_page_id' )))
 	{
-		aadb2c_login_custom('https://preorder.kekz.com/kasse/');
+		aadb2c_login_custom(site_url() . '/kasse/');
 		exit();
 	}
 
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
-		aadb2c_login_custom('https://preorder.kekz.com/mein-konto/');
+		aadb2c_login_custom(site_url() . '/mein-konto/');
 		exit();
 	}
 }
