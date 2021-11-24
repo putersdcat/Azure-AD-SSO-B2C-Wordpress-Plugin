@@ -778,9 +778,9 @@ Account creation	Account creation Allow customers to create an account during ch
 	[UnChecked] - When creating an account, automatically generate an account username for the customer based on their name, surname or email
 	[UnChecked] - When creating an account, automatically generate an account password
 
-	also needs hook - add_action('template_redirect','aadb2c_check_if_logged_in');
+	also needs hook - add_action('template_redirect','aadb2c_RequireLoginToAccess_WC_Cart');
 */	
-function aadb2c_check_if_logged_in()
+function aadb2c_Check_RequireLoginToAccess_WC_Cart()
 {
 	// https://rudrastyh.com/woocommerce/get-page-urls.html
 	//$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
@@ -790,6 +790,16 @@ function aadb2c_check_if_logged_in()
 		exit();
 	}
 
+	// commenting this out for now so ui toggle is true to its name, but i think these should go together
+	//if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
+	//{
+	//	aadb2c_login_custom(site_url() . '/mein-konto/');
+	//	exit();
+	//}
+}
+
+function aadb2c_Check_RequireLoginToAccess_WC_MyAccount()
+{
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_myaccount_page_id' )))
 	{
 		aadb2c_login_custom(site_url() . '/mein-konto/');
@@ -797,13 +807,15 @@ function aadb2c_check_if_logged_in()
 	}
 }
 
-
 // later add a toggle is settings to enable / disable this
 if (AADB2C_Settings::$RequireLoginToAccess_WC_Cart) {
-	add_action('template_redirect','aadb2c_check_if_logged_in');
+	add_action('template_redirect','aadb2c_Check_RequireLoginToAccess_WC_Cart');
 }
 
-
+// later add a toggle is settings to enable / disable this
+if (AADB2C_Settings::$RequireLoginToAccess_WC_MyAccount) {
+	add_action('template_redirect','aadb2c_Check_RequireLoginToAccess_WC_MyAccount');
+}
 
 if (AADB2C_Settings::$Replace_WpLogin) {
 	/** 

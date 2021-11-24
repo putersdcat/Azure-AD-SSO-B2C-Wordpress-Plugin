@@ -191,6 +191,14 @@ class AADB2C_Settings_Page
         );
 
         add_settings_field(
+            'aadb2c_RequireLoginToAccess_WC_MyAccount', // ID
+            'Require User to Login to Access the WooCommerce My Account', // Title 
+            array($this, 'aadb2c_RequireLoginToAccess_WC_MyAccount_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+
+        add_settings_field(
             'aadb2c_EnableGraphArrtibuteSync', // ID
             'Enable the Use of Legacy Graph Calls to Sync B2C user attributes', // Title 
             array($this, 'aadb2c_EnableGraphArrtibuteSync_callback'), // Callback
@@ -253,6 +261,8 @@ class AADB2C_Settings_Page
         $new_input['aadb2c_Replace_WpLogin'] = $input['aadb2c_Replace_WpLogin'];
 
         $new_input['aadb2c_RequireLoginToAccess_WC_Cart'] = $input['aadb2c_RequireLoginToAccess_WC_Cart'];
+
+        $new_input['aadb2c_RequireLoginToAccess_WC_MyAccount'] = $input['aadb2c_RequireLoginToAccess_WC_MyAccount'];
 
         $new_input['aadb2c_EnableGraphArrtibuteSync'] = $input['aadb2c_EnableGraphArrtibuteSync'];
 
@@ -441,6 +451,20 @@ class AADB2C_Settings_Page
         $current_value = $this->options['aadb2c_RequireLoginToAccess_WC_Cart'];
 
         echo '<input type="checkbox" id="aadb2c_RequireLoginToAccess_WC_Cart" name="aadb2c_config_elements[aadb2c_RequireLoginToAccess_WC_Cart]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_RequireLoginToAccess_WC_MyAccount_callback()
+    {
+
+        if (empty($this->options['aadb2c_RequireLoginToAccess_WC_MyAccount']))
+            $this->options['aadb2c_RequireLoginToAccess_WC_MyAccount'] = 0;
+
+        $current_value = $this->options['aadb2c_RequireLoginToAccess_WC_MyAccount'];
+
+        echo '<input type="checkbox" id="aadb2c_RequireLoginToAccess_WC_MyAccount" name="aadb2c_config_elements[aadb2c_RequireLoginToAccess_WC_MyAccount]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
     }
 
     /** 

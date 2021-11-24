@@ -16,6 +16,7 @@ class AADB2C_Settings
 
 	public static $Replace_WpLogin = 0;
 	public static $RequireLoginToAccess_WC_Cart = 1;
+	public static $RequireLoginToAccess_WC_MyAccount = 1;
 	// added this to UI to be able to disable the janky stuff used in the Proofe Of Concept Dev Environment only, like jquery chopping up web code, etc. 
 	public static $ToggleOffHackyStuff = 1;
 
@@ -72,6 +73,8 @@ class AADB2C_Settings
 			else self::$Replace_WpLogin = 0;
 			if ($config_elements['aadb2c_RequireLoginToAccess_WC_Cart']) self::$RequireLoginToAccess_WC_Cart = 1;
 			else self::$RequireLoginToAccess_WC_Cart = 0;
+			if ($config_elements['aadb2c_RequireLoginToAccess_WC_MyAccount']) self::$RequireLoginToAccess_WC_MyAccount = 1;
+			else self::$RequireLoginToAccess_WC_MyAccount = 0;
 			if ($config_elements['aadb2c_EnableGraphArrtibuteSync']) self::$EnableGraphArrtibuteSync = 1;
 			else self::$EnableGraphArrtibuteSync = 0;
 			if ($config_elements['aadb2c_ToggleOffHackyStuff']) self::$ToggleOffHackyStuff = 1;
