@@ -57,6 +57,10 @@ function aadb2c_login()
 	exit;
 }
 
+/**
+ * Redirects to B2C on a user login request, with specified redirect url appended to the request, 
+ * this is returned to WC and processed in funtion below to produce the specified redirect on return.
+ */
 function aadb2c_login_custom($custom_redirect_uri)
 {
 	try {
@@ -85,6 +89,107 @@ function aadb2c_logout()
 	exit;
 }
 
+
+/**
+ * Returns URI to B2C on a user login request, with specified redirect url appended to the request, 
+ * this is returned to WC and processed in funtion below to produce the specified redirect on return.
+ */
+function aadb2c_auth_endpoint_login_custom($custom_redirect_uri)
+{
+	try {
+		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$generic_policy);
+		return $aadb2c_endpoint_handler->get_authorization_endpoint() . "&state=generic~" . urlencode($custom_redirect_uri);
+	} catch (Exception $e) {
+		echo $e->getMessage();
+	}
+	exit;
+}
+
+/** 
+ * Returns URI to B2C on user logout.
+ */
+function aadb2c_auth_endpoint_logout()
+{
+	try {
+		$signout_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$generic_policy);
+		return $signout_endpoint_handler->get_end_session_endpoint();
+	} catch (Exception $e) {
+		echo $e->getMessage();
+	}
+	exit;
+}
+
+/**
+ * Redirects to B2C on a password reset request.
+ */
+function aadb2c_password_reset()
+{
+	try {
+		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
+		$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset';
+		wp_redirect($authorization_endpoint);
+	} catch (Exception $e) {
+		echo $e->getMessage();
+	}
+	exit;
+}
+
+/**
+ * Returns uri to B2C on a password reset request.
+ */
+function aadb2c_auth_endpoint_password_reset()
+{
+	try {
+		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
+		return $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset';
+	} catch (Exception $e) {
+		echo $e->getMessage();
+	}
+	exit;
+}
+
+// Shortcode function to return plain txt string of auth login url https://loginUri.microsoft.com/, and when followed will return back to specified "redirect_uri"
+function aadb2c_sc_auth_endpoint_login_custom( $atts ) {
+	$a = shortcode_atts( array(
+		'redirect_uri' => site_url(),
+	), $atts );
+	return aadb2c_auth_endpoint_login_custom($a['redirect_uri']);
+}
+add_shortcode('aadb2c_uri_login', 'aadb2c_sc_auth_endpoint_login_custom'); /* EXAMPLE: [aadb2c_uri_login redirect_uri="https://preorder.kekz.com/kasse"] */
+
+
+// Self Closing shortcode function to return an href to login uri of enclosed content.
+function aadb2c_sc_auth_endpoint_login_custom_self_close( $atts, $content = null ) {
+	$a = shortcode_atts( array(
+		'redirect_uri' => site_url(),
+	), $atts );
+	return '<a href="'. aadb2c_auth_endpoint_login_custom($a['redirect_uri']) .'">' . $content . '</a>';
+}
+add_shortcode('aadb2c_uri_login_sc', 'aadb2c_sc_auth_endpoint_login_custom_self_close'); /* EXAMPLE: [aadb2c_uri_login_sc redirect_uri="https://preorder.kekz.com/kasse"]Login Now[/aadb2c_uri_login_sc] */
+
+// Shortcode function to return plain txt string of logout url https://logoutUri.microsoft.com/
+function aadb2c_sc_auth_endpoint_logout() {
+	return aadb2c_auth_endpoint_logout();
+}
+add_shortcode('aadb2c_uri_logout', 'aadb2c_sc_auth_endpoint_logout'); // EXAMPLE: [aadb2c_uri_logout]
+
+// Self Closing shortcode function to return an href to logout uri of enclosed content.
+function aadb2c_sc_auth_endpoint_logout_self_close( $atts, $content = null ) {
+	return '<a href="'. aadb2c_auth_endpoint_logout() .'">' . $content . '</a>';
+}
+add_shortcode('aadb2c_uri_logout_sc', 'aadb2c_sc_auth_endpoint_logout_self_close'); // EXAMPLE: [aadb2c_uri_logout_sc]Logout[/aadb2c_uri_logout_sc]
+
+// Shortcode function to return plain txt string of password reset url https://logoutUri.microsoft.com/
+function aadb2c_sc_auth_endpoint_passwoed_reset() {
+	return aadb2c_auth_endpoint_password_reset();
+}
+add_shortcode('aadb2c_uri_password_reset', 'aadb2c_sc_auth_endpoint_passwoed_reset'); // EXAMPLE: [aadb2c_uri_password_reset]
+
+// Self Closing shortcode function to return an href to password reset uri of enclosed content.
+function aadb2c_sc_auth_endpoint_password_reset_self_close( $atts, $content = null ) {
+	return '<a href="'. aadb2c_auth_endpoint_password_reset() .'">' . $content . '</a>';
+}
+add_shortcode('aadb2c_uri_password_reset_sc', 'aadb2c_sc_auth_endpoint_password_reset_self_close'); // EXAMPLE: [aadb2c_uri_logout_sc]Reset Password[/aadb2c_uri_logout_sc]
 
 /** 
  * Verifies the id_token that is POSTed back to the web app from the 
@@ -422,20 +527,6 @@ function aadb2c_edit_profile()
 	}
 }
 
-/**
- * Redirects to B2C on a password reset request.
- */
-function aadb2c_password_reset()
-{
-	try {
-		$aadb2c_endpoint_handler = new AADB2C_Endpoint_Handler(AADB2C_Settings::$password_reset_policy);
-		$authorization_endpoint = $aadb2c_endpoint_handler->get_authorization_endpoint() . '&state=password_reset';
-		wp_redirect($authorization_endpoint);
-	} catch (Exception $e) {
-		echo $e->getMessage();
-	}
-	exit;
-}
 
 
 function aadb2c_token_authenticate() {
@@ -786,7 +877,8 @@ function aadb2c_Check_RequireLoginToAccess_WC_Cart()
 	//$custom_redirect_uri = $_SERVER['HTTP_REFERER'];
 	if(!is_user_logged_in() && is_page(get_option( 'woocommerce_checkout_page_id' )))
 	{
-		aadb2c_login_custom(site_url() . '/kasse/');
+		///* aadb2c_login_custom(site_url() . '/kasse/');
+		aadb2c_login_custom(wc_get_checkout_url());
 		exit();
 	}
 
@@ -816,6 +908,68 @@ if (AADB2C_Settings::$RequireLoginToAccess_WC_Cart) {
 if (AADB2C_Settings::$RequireLoginToAccess_WC_MyAccount) {
 	add_action('template_redirect','aadb2c_Check_RequireLoginToAccess_WC_MyAccount');
 }
+
+/*
+<a href="<?php echo wc_get_checkout_url();?>?call_aadb2c_login=true">
+if($_REQUEST['call_aadb2c_login'] == 'true'){
+    aadb2c_loginButtonClickedCheckout();
+}
+*/
+
+// Bad Shit, Goodish Idea
+/**
+ * Inject Login Code before CheckoutWC plugins checkout form
+ *
+ */
+//add_action( 'cfw_before_customer_info_tab_login', 'aadb2c_loginUiAtCheckout', 5 );
+// later add a toggle is settings to enable / disable this
+if (AADB2C_Settings::$OptionalLoginAtCheckout) {
+	add_action( 'woocommerce_before_checkout_form', 'aadb2c_loginUiAtCheckout', 5 );
+}
+function aadb2c_loginUiAtCheckout()
+{
+	if( !is_user_logged_in() )
+	{
+		echo '<div class="cfw-have-acc-text cfw-small">';
+			echo '<span>';
+				echo esc_html( apply_filters( 'cfw_already_have_account_text', esc_html__( 'Bereits registriert bei uns?', 'checkout-wc' ) ) );
+			echo '</span>';
+			echo '&nbsp&nbsp<a href="'. aadb2c_auth_endpoint_login_custom(wc_get_checkout_url()) .'">' . esc_html( apply_filters( 'cfw_login_faster_text', esc_html__( 'Melden Sie sich an, um ein schnelleres Kasse-Erlebnis zu erhalten.', 'checkout-wc' ) ) ) . '</a>';
+		echo '</div>';
+	} else {
+		echo '<div class="cfw-have-acc-text cfw-small">';
+			$welcome_back_name = apply_filters( 'cfw_welcome_back_name', wp_get_current_user()->display_name );
+			$welcome_back_email = apply_filters( 'cfw_welcome_back_email', wp_get_current_user()->user_email );
+			/* translators: %1 is the customer's name, %2 is their email address */
+			printf( esc_html__( 'Willkommen zurück, %1$s (%2$s).', 'checkout-wc' ), '<strong>' . $welcome_back_name . '</strong>', $welcome_back_email );
+			echo '&nbsp&nbsp<a href="' . wp_logout_url( get_permalink() ) . '">Ausloggen</a>';
+			echo '<input type="hidden" name="billing_email" id="billing_email" value="' . $welcome_back_email . '">';
+		echo '</div>';
+	}
+}
+
+
+/**
+ * Inject Login Code before vanilla WooCommerce checkout form
+ */
+/*
+add_action( 'woocommerce_before_checkout_form', 'aadb2c_loginUiAtCheckout', 5 );
+function aadb2c_loginUiAtCheckout()
+{
+	if( !is_user_logged_in() )
+	{
+		echo '<a href="'. aadb2c_auth_endpoint_login_custom(wc_get_checkout_url()) .'">Login Now</a>';
+		echo esc_html( apply_filters( 'woocommerce_checkout_login_message', esc_html__( 'Already have an account with us?', 'checkout-wc' ) ) );
+		echo '<a href="'. aadb2c_auth_endpoint_login_custom(wc_get_checkout_url()) .'">' . esc_html( apply_filters( 'woocommerce_checkout_login_message', esc_html__( '[aadb2c_uri_login_sc redirect_uri="https://preorder.kekz.com/kasse"]Login Now[/aadb2c_uri_login_sc]', 'checkout-wc' ) ) ) . '</a>';
+		//echo esc_html( apply_filters( 'woocommerce_checkout_must_be_logged_in_message', __( 'You must be logged in to checkout.', 'woocommerce' ) ) );
+	}
+	if( is_user_logged_in() )
+	{
+		echo 'Welcome Back, <a href="'. aadb2c_auth_endpoint_logout() .'">Logout</a>';
+	}
+
+}
+*/
 
 if (AADB2C_Settings::$Replace_WpLogin) {
 	/** 
@@ -936,3 +1090,7 @@ function aadb2c_get_and_process_access_token( $authentication_request_body, $aut
 	// token will be returned to main function and used in later calls to things.
 	return $result;
 }
+
+
+
+

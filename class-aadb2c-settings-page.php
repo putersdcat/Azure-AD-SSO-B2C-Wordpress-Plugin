@@ -184,7 +184,7 @@ class AADB2C_Settings_Page
 
         add_settings_field(
             'aadb2c_RequireLoginToAccess_WC_Cart', // ID
-            'Require User to Login to Access the WooCommerce Cart', // Title 
+            'Require User to Login to Access the WooCommerce Checkout', // Title 
             array($this, 'aadb2c_RequireLoginToAccess_WC_Cart_callback'), // Callback
             'aadb2c-settings-page', // Page
             'service_config_section' // Section           
@@ -194,6 +194,14 @@ class AADB2C_Settings_Page
             'aadb2c_RequireLoginToAccess_WC_MyAccount', // ID
             'Require User to Login to Access the WooCommerce My Account', // Title 
             array($this, 'aadb2c_RequireLoginToAccess_WC_MyAccount_callback'), // Callback
+            'aadb2c-settings-page', // Page
+            'service_config_section' // Section           
+        );
+        
+        add_settings_field(
+            'aadb2c_OptionalLoginAtCheckout', // ID
+            'Show Optional Login at WooCommerce Checkout', // Title 
+            array($this, 'aadb2c_OptionalLoginAtCheckout_callback'), // Callback
             'aadb2c-settings-page', // Page
             'service_config_section' // Section           
         );
@@ -264,6 +272,8 @@ class AADB2C_Settings_Page
 
         $new_input['aadb2c_RequireLoginToAccess_WC_MyAccount'] = $input['aadb2c_RequireLoginToAccess_WC_MyAccount'];
 
+        $new_input['aadb2c_OptionalLoginAtCheckout'] = $input['aadb2c_OptionalLoginAtCheckout'];
+        
         $new_input['aadb2c_EnableGraphArrtibuteSync'] = $input['aadb2c_EnableGraphArrtibuteSync'];
 
         $new_input['aadb2c_ToggleOffHackyStuff'] = $input['aadb2c_ToggleOffHackyStuff'];
@@ -465,6 +475,20 @@ class AADB2C_Settings_Page
         $current_value = $this->options['aadb2c_RequireLoginToAccess_WC_MyAccount'];
 
         echo '<input type="checkbox" id="aadb2c_RequireLoginToAccess_WC_MyAccount" name="aadb2c_config_elements[aadb2c_RequireLoginToAccess_WC_MyAccount]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
+    }
+    
+    /** 
+     * Get the settings option array and print one of its values
+     */
+    public function aadb2c_OptionalLoginAtCheckout_callback()
+    {
+
+        if (empty($this->options['aadb2c_OptionalLoginAtCheckout']))
+            $this->options['aadb2c_OptionalLoginAtCheckout'] = 0;
+
+        $current_value = $this->options['aadb2c_OptionalLoginAtCheckout'];
+
+        echo '<input type="checkbox" id="aadb2c_OptionalLoginAtCheckout" name="aadb2c_config_elements[aadb2c_OptionalLoginAtCheckout]" value="1" class="code" ' . checked(1, $current_value, false) . ' />';
     }
 
     /** 
