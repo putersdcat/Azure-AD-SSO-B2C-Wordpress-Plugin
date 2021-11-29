@@ -924,8 +924,30 @@ if($_REQUEST['call_aadb2c_login'] == 'true'){
 //add_action( 'cfw_before_customer_info_tab_login', 'aadb2c_loginUiAtCheckout', 5 );
 // later add a toggle is settings to enable / disable this
 if (AADB2C_Settings::$OptionalLoginAtCheckout) {
-	add_action( 'woocommerce_before_checkout_form', 'aadb2c_loginUiAtCheckout', 5 );
+	$pluginList = get_option( 'active_plugins' );
+	$plugin = 'checkout-for-woocommerce/checkout-for-woocommerce.php'; 
+	//if ( is_plugin_active('checkout-for-woocommerce/checkout-for-woocommerce.php') ) 
+	if ( in_array( $plugin , $pluginList ) )
+	{
+		add_action( 'cfw_before_customer_info_tab_login', 'aadb2c_cfw_loginUiAtCheckout', 5 );
+	} else {
+		add_action( 'woocommerce_before_checkout_form', 'aadb2c_loginUiAtCheckout', 5 );
+	}
 }
+
+function aadb2c_cfw_loginUiAtCheckout()
+{
+	if( !is_user_logged_in() )
+	{
+		echo '<div class="cfw-have-acc-text cfw-small">';
+			echo '<span>';
+				echo esc_html( apply_filters( 'cfw_already_have_account_text', esc_html__( 'Bereits registriert bei uns?', 'checkout-wc' ) ) );
+			echo '</span>';
+			echo '&nbsp&nbsp<a href="'. aadb2c_auth_endpoint_login_custom(wc_get_checkout_url()) .'">' . esc_html( apply_filters( 'cfw_login_faster_text', esc_html__( 'Melden Sie sich an, um ein schnelleres Kasse-Erlebnis zu erhalten.', 'checkout-wc' ) ) ) . '</a>';
+		echo '</div>';
+	}
+}
+
 function aadb2c_loginUiAtCheckout()
 {
 	if( !is_user_logged_in() )
@@ -938,8 +960,8 @@ function aadb2c_loginUiAtCheckout()
 		echo '</div>';
 	} else {
 		echo '<div class="cfw-have-acc-text cfw-small">';
-			$welcome_back_name = apply_filters( 'cfw_welcome_back_name', wp_get_current_user()->display_name );
-			$welcome_back_email = apply_filters( 'cfw_welcome_back_email', wp_get_current_user()->user_email );
+			$welcome_back_name = wp_get_current_user()->display_name;
+			$welcome_back_email = wp_get_current_user()->user_email;
 			/* translators: %1 is the customer's name, %2 is their email address */
 			printf( esc_html__( 'Willkommen zurück, %1$s (%2$s).', 'checkout-wc' ), '<strong>' . $welcome_back_name . '</strong>', $welcome_back_email );
 			echo '&nbsp&nbsp<a href="' . wp_logout_url( get_permalink() ) . '">Ausloggen</a>';
